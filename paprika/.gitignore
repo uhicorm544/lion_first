@@ -19,3 +19,9 @@ frontend/out/
 .idea/
 .vscode/
 *.iml
+
+# MacOS
+.DS_Store
+
+# Gradle Configuration
+gradle*
