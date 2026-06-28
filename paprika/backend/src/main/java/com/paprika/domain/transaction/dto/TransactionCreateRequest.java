@@ -10,22 +10,22 @@ import java.time.LocalDateTime;
 /**
  * 거래 생성 요청 DTO
  * 담당: D - 이동준
+ *
+ * fee, amount(최종 결제 금액)는 서버에서 itemPrice 기준으로 계산한다.
  */
 @Getter
 public class TransactionCreateRequest {
 
     @NotNull
-    private Long productId;
+    private Long postId;
 
     @NotNull
     private TransactionType type; // DIRECT or DELIVERY
 
     @NotNull
-    private BigDecimal amount;
+    private BigDecimal itemPrice; // 상품 가격
 
-    // 직거래 시 입력
+    // 직거래(DIRECT) 시 입력 (선택)
     private String meetingLocation;
-    private Double meetingLatitude;
-    private Double meetingLongitude;
-    private LocalDateTime meetingTime;
+    private LocalDateTime meetingTime; 
 }

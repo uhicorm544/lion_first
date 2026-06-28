@@ -24,6 +24,7 @@ public class TransactionController {
 
     // TODO: private final TransactionService transactionService;
 
+    //거래생성
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> createTransaction(
             /* @Valid @RequestBody TransactionCreateRequest request */

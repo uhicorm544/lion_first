@@ -10,12 +10,15 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 거래 엔티티
+ * 거래 공통 엔티티 (상위)
  * 담당: D - 이동준
  *
+ * 거래 방식(type)에 따라 하위 1:1 테이블 중 하나와만 연결된다.
+ *  - DIRECT   -> DirectTransaction
+ *  - DELIVERY -> DeliveryTransaction
+ *
  * TODO:
- *  - Product, User 연관 관계 추가
- *  - 직거래 vs 택배 분기 로직
+ *  - Post, User 연관 관계(@ManyToOne) 추가
  *  - 거래 완료 후 리뷰 연동 (E - 장인호와 협의)
  *  - 세금계산서 발행 로직
  */
@@ -30,11 +33,14 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long productId;  // TODO: Product와 @ManyToOne
+    @Column(nullable = false)
+    private Long postId;  // TODO: Post와 @ManyToOne (posts 테이블 참조)
 
-    private Long buyerId;    // TODO: User와 @ManyToOne
+    @Column(nullable = false)
+    private Long sellerId;   // TODO: User와 @ManyToOne (판매자)
 
-    private Long sellerId;   // TODO: User와 @ManyToOne
+    @Column(nullable = false)
+    private Long buyerId;    // TODO: User와 @ManyToOne (구매자)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,23 +48,19 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionStatus status;
+    private TransactionStatus status = TransactionStatus.PENDING;
 
-    private BigDecimal amount;
+    @Column(nullable = false)
+    private BigDecimal itemPrice; // 상품 가격
 
-    // 직거래용
-    private String meetingLocation;
+    @Column(nullable = false)
+    private BigDecimal fee = BigDecimal.ZERO; // 수수료 (직거래는 0, 택배만 부과)
 
-    private Double meetingLatitude;
+    @Column(nullable = false)
+    private BigDecimal amount; // 최종 결제 금액 (itemPrice + fee)
 
-    private Double meetingLongitude;
-
-    private LocalDateTime meetingTime;
-
-    // 택배용
-    private String trackingNumber;
-
-    private String deliveryStatus;
+    @Enumerated(EnumType.STRING)
+    private CancelledBy cancelledBy; // SELLER, BUYER / 취소 아닐 때 null
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -66,13 +68,44 @@ public class Transaction {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    @Builder
+    private Transaction(Long postId, Long sellerId, Long buyerId,
+                        TransactionType type, BigDecimal itemPrice, BigDecimal fee) {
+        this.postId = postId;
+        this.sellerId = sellerId;
+        this.buyerId = buyerId;
+        this.type = type;
+        this.status = TransactionStatus.PENDING;
+        this.itemPrice = itemPrice;
+        // 직거래(DIRECT)는 수수료 없음, 택배(DELIVERY)만 수수료 부과
+        this.fee = (type == TransactionType.DELIVERY && fee != null) ? fee : BigDecimal.ZERO;
+        this.amount = itemPrice.add(this.fee);
+    }
+
+    /** 거래 확정 (판매자 수락) */
+    public void agree() {
+        this.status = TransactionStatus.AGREED;
+    }
+
+    /** 거래 완료 */
+    public void complete() {
+        this.status = TransactionStatus.COMPLETED;
+    }
+
+    /** 거래 취소 */
+    public void cancel(CancelledBy cancelledBy) {
+        this.status = TransactionStatus.CANCELLED;
+        this.cancelledBy = cancelledBy;
+    }
+
     public enum TransactionType { DIRECT, DELIVERY }
 
     public enum TransactionStatus {
-        PENDING,       // 거래 요청
-        AGREED,        // 거래 확정
-        IN_TRANSIT,    // 배송 중 (택배)
-        COMPLETED,     // 거래 완료
-        CANCELLED      // 거래 취소
+        PENDING,    // 거래 요청
+        AGREED,     // 거래 확정
+        COMPLETED,  // 거래 완료
+        CANCELLED   // 거래 취소
     }
+
+    public enum CancelledBy { SELLER, BUYER }
 }
