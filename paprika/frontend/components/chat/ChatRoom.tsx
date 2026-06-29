@@ -32,7 +32,7 @@ function mergeById(a: Msg[], b: Msg[]): Msg[] {
   const map = new Map<number, Msg>();
   for (const m of a) map.set(m.id, m);
   for (const m of b) map.set(m.id, m);
-  return [...map.values()].sort((x, y) => x.id - y.id);
+  return Array.from(map.values()).sort((x, y) => x.id - y.id);
 }
 
 export default function ChatRoom({ roomId, myId }: { roomId: number; myId?: number }) {
