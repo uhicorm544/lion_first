@@ -1,0 +1,20 @@
+{
+    "sqltools.connections": [
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": true
+                }
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "likelion-db.coder-han.com",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "paprika-db",
+            "database": "likelion",
+            "username": "likelion",
+            "password": "fh0gJQzvqoNcHjoAXLowJ5fY73Qt"
+        }
+    ]
+}

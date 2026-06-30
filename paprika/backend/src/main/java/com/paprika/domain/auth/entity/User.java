@@ -70,18 +70,5 @@ public class User {
     public enum Role { USER, ADMIN }
     public enum Provider { LOCAL, GOOGLE, NAVER, GITHUB }
 
-
-    //닉네임변경 이미지 변경(장인호)
-    public void updateNickname(String nickname) {
-    this.nickname = nickname;
-    }
-
-    public void updateProfileImage(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
-    //매너온도(장인호)
-    @Column(name = "trust_score")
-    @Builder.Default
-    private Double trustScore = 30.0;
     
 }

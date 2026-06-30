@@ -1,6 +1,6 @@
 package com.paprika.domain.mypage.dto;
 
-import com.paprika.domain.auth.entity.User;
+import com.paprika.domain.mypage.entity.MyPageUser;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,18 +12,14 @@ import lombok.Getter;
 @Builder
 public class ProfileResponse {
     private Long id;
-    private String email;
     private String nickname;
     private String profileImageUrl;
-    private Double trustScore;
 
-    public static ProfileResponse from(User user) {
+    public static ProfileResponse from(MyPageUser user) {
         return ProfileResponse.builder()
                 .id(user.getId())
-                .email(user.getEmail())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
-                .trustScore(user.getTrustScore())
                 .build();
     }
 }

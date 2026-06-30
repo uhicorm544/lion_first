@@ -1,7 +1,7 @@
 package com.paprika.domain.mypage.service;
 
-import com.paprika.domain.auth.entity.User;
-import com.paprika.domain.auth.repository.UserRepository;
+import com.paprika.domain.mypage.entity.MyPageUser;
+import com.paprika.domain.mypage.repository.MyPageUserRepository;
 import com.paprika.domain.mypage.dto.ProfileResponse;
 import com.paprika.domain.mypage.dto.ProfileUpdateRequest;
 import com.paprika.domain.mypage.dto.TransactionSummaryResponse;
@@ -40,7 +40,7 @@ public class MyPageService {
 
     private final ReviewRepository reviewRepository;
     private final WishListRepository wishListRepository;
-    private final UserRepository userRepository;
+    private final MyPageUserRepository myPageUserRepository;
     private final TransactionRepository transactionRepository;
 
     /**
@@ -48,7 +48,7 @@ public class MyPageService {
      * GET /api/v1/users/me
      */
     public ProfileResponse getMyProfile(Long userId) {
-        User user = userRepository.findById(userId)
+        MyPageUser user = myPageUserRepository.findById(userId)
                 .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
         return ProfileResponse.from(user);
     }
@@ -59,11 +59,11 @@ public class MyPageService {
      */
     @Transactional
     public ProfileResponse updateMyProfile(Long userId, ProfileUpdateRequest request) {
-        User user = userRepository.findById(userId)
+        MyPageUser user = myPageUserRepository.findById(userId)
                 .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
 
         if (request.getNickname() != null) {
-            if (userRepository.existsByNickname(request.getNickname())
+            if (myPageUserRepository.existsByNickname(request.getNickname())
                     && !request.getNickname().equals(user.getNickname())) {
                 throw new PaprikaException(ErrorCode.INVALID_INPUT);
             }
@@ -80,10 +80,10 @@ public class MyPageService {
      * GET /api/v1/users/me/check-nickname
      */
     public boolean isNicknameDuplicate(String nickname, Long currentUserId) {
-        User currentUser = userRepository.findById(currentUserId)
+        MyPageUser currentUser = myPageUserRepository.findById(currentUserId)
                 .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
         if (nickname.equals(currentUser.getNickname())) return false;
-        return userRepository.existsByNickname(nickname);
+        return myPageUserRepository.existsByNickname(nickname);
     }
 
     /**
@@ -98,9 +98,6 @@ public class MyPageService {
      * TODO: 거래 취소 후 상품 상태 복구 - D(이동준), B(백성민)과 협의 필요
      */
     public List<TransactionSummaryResponse> getMyTransactions(Long userId, String tab) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
-
         return switch (tab) {
             case "buy" -> transactionRepository
                     .findByBuyerIdOrderByCreatedAtDesc(userId)
