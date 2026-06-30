@@ -6,10 +6,14 @@ import com.paprika.domain.transaction.dto.TransactionCreateRequest;
 import com.paprika.domain.transaction.dto.TransactionResponse;
 import com.paprika.domain.transaction.dto.TransactionStatusRequest;
 import com.paprika.domain.transaction.service.TransactionService;
+import com.paprika.global.exception.ErrorCode;
+import com.paprika.global.exception.PaprikaException;
 import com.paprika.global.response.ApiResponse;
+import com.paprika.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,12 +36,14 @@ public class TransactionController {
     //상품 조회 통로
     private final PostQueryClient postQueryClient;
 
-    //거래생성
+    //거래생성 (거래하기를 누른 로그인 사용자가 구매자)
     @PostMapping
     public ResponseEntity<ApiResponse<TransactionResponse>> createTransaction(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody TransactionCreateRequest request
     ) {
-        TransactionResponse response = transactionService.createTransaction(request);
+        Long buyerId = requireUserId(userDetails);
+        TransactionResponse response = transactionService.createTransaction(request, buyerId);
         return ResponseEntity.ok(ApiResponse.ok("거래가 생성되었습니다.", response));
     }
 
@@ -49,8 +55,11 @@ public class TransactionController {
 
     // 내(구매자) 진행 중 거래 목록 조회 (상태 페이지 재방문 시에도 표시)
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TransactionResponse>>> getMyTransactions() {
-        return ResponseEntity.ok(ApiResponse.ok(transactionService.getMyTransactions()));
+    public ResponseEntity<ApiResponse<List<TransactionResponse>>> getMyTransactions(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long buyerId = requireUserId(userDetails);
+        return ResponseEntity.ok(ApiResponse.ok(transactionService.getMyTransactions(buyerId)));
     }
 
     //거래 상세 조회
@@ -89,5 +98,13 @@ public class TransactionController {
     public ResponseEntity<ApiResponse<Void>> completeTransaction(@PathVariable Long id) {
         transactionService.completeTransaction(id);
         return ResponseEntity.ok(ApiResponse.ok("거래가 완료되었습니다.", null));
+    }
+
+    // 로그인한 사용자(JWT) id 추출. 토큰이 없으면 401(인증 필요)
+    private Long requireUserId(CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new PaprikaException(ErrorCode.UNAUTHORIZED);
+        }
+        return userDetails.getUserId();
     }
 }

@@ -38,18 +38,15 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class TransactionService {
 
-    // 인증 연동 전 임시 구매자 (TODO: 로그인 사용자로 대체)
-    private static final Long DEMO_BUYER_ID = 2L;
-
     private final TransactionRepository transactionRepository;
     private final DirectTransactionRepository directTransactionRepository;
     private final DeliveryTransactionRepository deliveryTransactionRepository;
     private final PostStatusClient postStatusClient;
     private final PostQueryClient postQueryClient;
 
-    /** 거래 생성: 상품 정보를 조회해 거래(PENDING)와 방식별 상세를 저장한다. */
+    /** 거래 생성: 상품 정보를 조회해 거래(PENDING)와 방식별 상세를 저장한다. (buyerId = 거래하기를 누른 로그인 사용자) */
     @Transactional
-    public TransactionResponse createTransaction(TransactionCreateRequest request) {
+    public TransactionResponse createTransaction(TransactionCreateRequest request, Long buyerId) {
         // 같은 상품에 진행 중(PENDING/AGREED)인 거래가 있으면 중복 생성 방지
         boolean inProgressExists = transactionRepository.existsByPostIdAndStatusIn(
                 request.getPostId(),
@@ -64,7 +61,7 @@ public class TransactionService {
         Transaction transaction = Transaction.builder()
                 .postId(request.getPostId())
                 .sellerId(postInfo.sellerId())
-                .buyerId(DEMO_BUYER_ID)
+                .buyerId(buyerId)
                 .type(request.getType())
                 .itemPrice(request.getItemPrice())
                 .build();
@@ -97,11 +94,11 @@ public class TransactionService {
         return toResponse(transaction);
     }
 
-    /** 내(구매자) 진행 중 거래 목록 조회: 화면 새로고침·재방문 시에도 표시하기 위함 */
-    public List<TransactionResponse> getMyTransactions() {
+    /** 내 진행 중 거래 목록 조회(구매자/판매자 모두): 화면 새로고침·재방문 시에도 표시하기 위함 */
+    public List<TransactionResponse> getMyTransactions(Long userId) {
         return transactionRepository
-                .findByBuyerIdAndStatusInOrderByCreatedAtDesc(
-                        DEMO_BUYER_ID,
+                .findMyTransactions(
+                        userId,
                         List.of(TransactionStatus.PENDING, TransactionStatus.AGREED))
                 .stream()
                 .map(this::toResponse)

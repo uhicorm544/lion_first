@@ -4,6 +4,7 @@ import com.paprika.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,6 +42,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException e) {
         log.warn("IllegalStateException: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    // 본문 파싱 실패(예: 잘못된 날짜·시간 형식 "1232-13-21T32:31") -> 500이 아닌 400으로 응답
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
+        log.warn("HttpMessageNotReadableException: {}", e.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail("요청 형식이 올바르지 않습니다. 입력값(날짜·시간 등)을 확인해 주세요."));
     }
 
     @ExceptionHandler(Exception.class)
