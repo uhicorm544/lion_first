@@ -59,8 +59,15 @@ dependencies {
     // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    // H2 인메모리 DB (로컬 테스트용)
+    runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+bootRun {
+    workingDir = rootProject.projectDir.parentFile  // .env가 있는 paprika/ 폴더
 }

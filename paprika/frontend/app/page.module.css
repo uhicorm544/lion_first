@@ -7,10 +7,9 @@
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) 1fr;
-  gap: 36px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   background: linear-gradient(180deg, rgba(255, 241, 236, 0.95) 0%, rgba(252, 249, 248, 1) 100%);
   border-radius: 32px;
   padding: 44px;
@@ -40,7 +39,6 @@
 
 .heroSubtitle {
   color: var(--color-on-surface-variant);
-  max-width: 520px;
   margin-bottom: 28px;
 }
 
@@ -219,9 +217,6 @@
 }
 
 @media (max-width: 1024px) {
-  .hero {
-    grid-template-columns: 1fr;
-  }
   .categoryGrid,
   .grid,
   .recommendedGrid {

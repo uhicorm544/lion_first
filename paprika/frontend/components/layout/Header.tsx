@@ -1,17 +1,25 @@
-/**
- * 공통 헤더
- * 담당: A - 민동현 (로그인 상태), B - 백성민 (검색창)
- *
- * TODO:
- *  - 로고
- *  - 검색창 (B - 백성민)
- *  - 로그인/프로필 버튼 (A - 민동현)
- *  - 알림 배지 (C - 한대천)
- */
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './Header.module.css';
 
 export default function Header() {
+  const { user, loading, logout } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <header className={styles.header}>
       <div className={styles.container}>
@@ -38,17 +46,46 @@ export default function Header() {
         </nav>
 
         <div className={styles.actions}>
-          <Link href="/products/new" className={styles.sellBtn}>
-            Sell
-          </Link>
-
           <button className={styles.iconBtn} aria-label="Notifications">
             <span className="material-symbols-outlined">notifications</span>
           </button>
 
-          <div className={styles.avatar}>
-            <img src="/images/avatar-placeholder.svg" alt="Profile" />
-          </div>
+          {!loading && (
+            user ? (
+              <div className={styles.avatarWrap} ref={dropdownRef}>
+                <button
+                  className={styles.avatarBtn}
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  aria-label="프로필 메뉴"
+                >
+                  <img
+                    src={user.profileImageUrl || '/images/avatar-placeholder.svg'}
+                    alt={user.nickname}
+                  />
+                </button>
+                {dropdownOpen && (
+                  <div className={styles.dropdown}>
+                    <span className={styles.dropdownName}>{user.nickname}</span>
+                    <Link href="/mypage" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
+                      <span className="material-symbols-outlined">person</span>
+                      마이페이지
+                    </Link>
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => { setDropdownOpen(false); logout(); }}
+                    >
+                      <span className="material-symbols-outlined">logout</span>
+                      로그아웃
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link href="/login" className={styles.loginBtn}>
+                로그인
+              </Link>
+            )
+          )}
         </div>
       </div>
     </header>

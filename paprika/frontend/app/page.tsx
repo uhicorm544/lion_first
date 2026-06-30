@@ -106,11 +106,6 @@ export default function HomePage() {
           </div>
           <p className={styles.trending}>Trending: Vintage Camera Coffee Table Nike Dunks Plants</p>
         </div>
-        <div className={styles.heroVisual}>
-          <div className={styles.heroBanner}>
-            <span className={styles.badge}>Sell</span>
-          </div>
-        </div>
       </section>
 
       <section className={styles.categoryGrid}>
@@ -134,25 +129,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className={styles.ctaCard}>
-        <div>
-          <h2>Turn your clutter into cash</h2>
-          <p>Snap a photo, set a price, and sell to your neighbors in minutes. It’s that easy.</p>
-        </div>
-        <button type="button">Start Selling Now</button>
-      </section>
 
-      <section className={styles.recommendedSection}>
-        <div className={styles.sectionHeader}>
-          <h2>Recommended for You</h2>
-          <button type="button">See more</button>
-        </div>
-        <div className={styles.recommendedGrid}>
-          {sampleProducts.map((product) => (
-            <ProductCard key={`rec-${product.id}`} product={product} />
-          ))}
-        </div>
-      </section>
     </main>
   );
 }

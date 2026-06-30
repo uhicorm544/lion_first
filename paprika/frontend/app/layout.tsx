@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
 import Header from '../components/layout/Header';
-import BottomTabBar from '../components/layout/BottomTabBar';
+import { AuthProvider } from '../contexts/AuthContext';
 
 export const metadata: Metadata = {
   title: 'Paprika - 동네 중고 마켓',
@@ -22,9 +22,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Header />
-        <div style={{ paddingTop: 72, paddingBottom: 84 }}>{children}</div>
-        <BottomTabBar />
+        <AuthProvider>
+          <Header />
+          <div style={{ paddingTop: 72 }}>{children}</div>
+        </AuthProvider>
       </body>
     </html>
   );

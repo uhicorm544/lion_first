@@ -36,26 +36,35 @@ public class User {
 
     private String password; // OAuth2 유저는 null 허용
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String nickname;
 
+    @Column(name = "profile_image_url")
     private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private Role role = Role.USER;
 
     @Enumerated(EnumType.STRING)
-    private Provider provider; // LOCAL, GOOGLE, NAVER, GITHUB
+    @Column(nullable = false)
+    @Builder.Default
+    private Provider provider = Provider.LOCAL;
 
+    @Column(name = "provider_id")
     private String providerId;
 
-    private Double trustScore = 36.5; // 매너 온도 (E - 장인호와 연동)
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean active = true;
 
     @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public enum Role { USER, ADMIN }
