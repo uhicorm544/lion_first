@@ -12,7 +12,6 @@
  *
  * TODO:
  *  - 위로 스크롤 시 더 오래된 메시지 로드 (커서 페이징)
- *  - senderId는 인증(JWT) 적용 후 토큰 기반으로
  */
 import { useEffect, useRef, useState } from 'react';
 import type { StompSubscription } from '@stomp/stompjs';
@@ -27,6 +26,18 @@ interface Msg {
   content: string;
 }
 
+// JWT(access token)의 sub 클레임 = 내 유저 id. "내 메시지" 판별과 senderId 전송에 사용.
+function myUserIdFromToken(): number | undefined {
+  const token = getAccessToken();
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload?.sub != null ? Number(payload.sub) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // 두 목록을 메시지 id 기준으로 합치고(중복 제거) id 오름차순 정렬
 function mergeById(a: Msg[], b: Msg[]): Msg[] {
   const map = new Map<number, Msg>();
@@ -35,7 +46,8 @@ function mergeById(a: Msg[], b: Msg[]): Msg[] {
   return Array.from(map.values()).sort((x, y) => x.id - y.id);
 }
 
-export default function ChatRoom({ roomId, myId }: { roomId: number; myId?: number }) {
+export default function ChatRoom({ roomId }: { roomId: number }) {
+  const myId = myUserIdFromToken();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const listRef = useRef<HTMLDivElement>(null);

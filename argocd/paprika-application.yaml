@@ -25,10 +25,9 @@ spec:
     namespace: likelion-project              # 배포 대상 네임스페이스 (이미 존재)
 
   syncPolicy:
-    # 처음엔 수동 sync로 시작 — 한 번 눈으로 확인 후 자동화 권장.
-    # 자동 배포를 켜려면 아래 automated 블록 주석을 푼다:
-    # automated:
-    #   prune: true      # git에서 삭제된 리소스는 클러스터에서도 제거
-    #   selfHeal: true   # 수동 변경을 git 상태로 되돌림
+    # 자동 배포 활성화됨 — main에 새 커밋이 들어오면 ArgoCD가 자동으로 sync.
+    automated:
+      prune: true      # git에서 삭제된 리소스는 클러스터에서도 제거
+      selfHeal: true   # 수동 변경을 git 상태로 되돌림
     syncOptions:
       - CreateNamespace=false  # likelion-project는 이미 있으므로 생성 안 함

@@ -6,7 +6,10 @@ import com.paprika.domain.chat.dto.ChatRoomCreateRequest;
 import com.paprika.domain.chat.dto.ChatRoomResponse;
 import com.paprika.domain.chat.entity.ChatMessage;
 import com.paprika.domain.chat.service.ChatService;
+import com.paprika.global.exception.ErrorCode;
+import com.paprika.global.exception.PaprikaException;
 import com.paprika.global.response.ApiResponse;
+import com.paprika.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -15,6 +18,8 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,12 +45,16 @@ public class ChatController {
     private final ChatService chatService;
 
     /**
-     * 현재 로그인 사용자 id.
-     * TODO: A의 JWT 필터 완성 후 SecurityContext / Authorization 헤더의 JWT에서 파싱.
-     *       지금은 dev 모드라 임시로 7번 유저로 고정한다.
+     * 현재 로그인 사용자 id — JWT(SecurityContext)에서 가져온다.
+     * JwtAuthenticationFilter가 유효한 Bearer 토큰이면 CustomUserDetails를 넣어준다.
+     * (참고: WebSocket 메시지 경로는 이 SecurityContext를 타지 않는다 — 별도 인터셉터 필요)
      */
     private Long getCurrentUserId() {
-        return 7L;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails principal)) {
+            throw new PaprikaException(ErrorCode.UNAUTHORIZED);
+        }
+        return principal.getUserId();
     }
 
     /**
@@ -54,16 +63,18 @@ public class ChatController {
      *  - 1개  → 그 방을 바로 연다
      *  - N개  → 목록을 보여준다
      *  - 0개  → 빈 상태 (판매자에게 문의 없음)
-     * 현재 유저(buyerId/판매자 판단 기준)는 인증에서 가져온다. (지금은 임시 7번)
+     *
+     * 요청 본문은 postId만 받는다.
+     *  - 현재 유저(나)는 JWT에서 가져온다.
+     *  - 판매자는 서버가 postId로 posts를 조회해 판단한다. (내가 판매자면 문의 목록, 아니면 방 1개)
      */
     @PostMapping("/rooms/enter")
     public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> enterRooms(
             @RequestBody ChatRoomCreateRequest request
     ) {
-        // TEMP(테스트): 요청에 buyerId가 오면 그걸 현재 유저로 사용. prod에선 무시하고 getCurrentUserId().
-        Long me = request.getBuyerId() != null ? request.getBuyerId() : getCurrentUserId();
+        Long me = getCurrentUserId();
         List<ChatRoomResponse> rooms = chatService
-                .enterChatRooms(request.getPostId(), me, request.getSellerId())
+                .enterChatRooms(request.getPostId(), me)
                 .stream()
                 .map(ChatRoomResponse::from)
                 .toList();

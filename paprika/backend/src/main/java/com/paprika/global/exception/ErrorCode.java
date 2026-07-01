@@ -22,6 +22,7 @@ public enum ErrorCode {
     // Chat (C - 한대천)
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
     CHAT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "채팅방에 대한 권한이 없습니다."),
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
 
     // Transaction (D - 이동준)
     TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "거래를 찾을 수 없습니다."),

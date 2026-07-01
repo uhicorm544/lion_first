@@ -4,8 +4,9 @@
 
  *
  * 사용법:
- *   <ChatButton productId={product.id} sellerId={product.sellerId} />
-
+ *   <ChatButton postId={post.id} />
+ *
+ * 판매자·현재 유저는 백엔드가 JWT와 posts 조회로 판단한다. 프론트는 postId만 넘긴다.
  */
 import { useState } from 'react';
 import api from '@/lib/api';
@@ -14,12 +15,10 @@ import ChatRoomList, { type RoomSummary } from './ChatRoomList';
 import styles from './ChatButton.module.css';
 
 interface ChatButtonProps {
-  postId: number; // 상품 id (= 백엔드 post_id)
-  sellerId: number; // 판매자 id
-  buyerId?: number; // 테스트용: 현재 유저(나). 실제 앱에선 생략(백엔드가 인증값 사용)
+  postId: number; // 게시글 id (백엔드 posts.id)
 }
 
-export default function ChatButton({ postId, sellerId, buyerId }: ChatButtonProps) {
+export default function ChatButton({ postId }: ChatButtonProps) {
   const [roomId, setRoomId] = useState<number | null>(null);     // 열린 방
   const [rooms, setRooms] = useState<RoomSummary[] | null>(null); // 방 목록(N개일 때)
 
@@ -34,7 +33,7 @@ export default function ChatButton({ postId, sellerId, buyerId }: ChatButtonProp
     }
     try {
       // enter → 항상 방 배열 반환 (구매자는 1개 보장, 판매자는 0~N개)
-      const res = await api.post('/api/v1/chat/rooms/enter', { postId, sellerId, buyerId });
+      const res = await api.post('/api/v1/chat/rooms/enter', { postId });
       const list: RoomSummary[] = res.data.data ?? [];
 
       if (list.length === 1) {
@@ -46,7 +45,17 @@ export default function ChatButton({ postId, sellerId, buyerId }: ChatButtonProp
       }
     } catch (e) {
       console.error('[ChatButton] enter 실패', e);
-      alert('채팅방을 열지 못했습니다. (백엔드 확인 필요)');
+      // 서버가 내려준 메시지(ApiResponse.message) + HTTP 상태코드를 함께 표시.
+      // 예: "인증이 필요합니다. (401)", "게시글을 찾을 수 없습니다. (404)"
+      // 응답 자체가 없으면(네트워크/서버 다운) 연결 오류로 안내.
+      const err = e as { response?: { status?: number; data?: { message?: string } } };
+      const status = err.response?.status;
+      const message = err.response?.data?.message;
+      alert(
+        message
+          ? `${message}${status ? ` (${status})` : ''}`
+          : '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      );
     }
   };
 
@@ -64,7 +73,7 @@ export default function ChatButton({ postId, sellerId, buyerId }: ChatButtonProp
               ← 목록으로
             </button>
           )}
-          <ChatRoom roomId={roomId} myId={buyerId} />
+          <ChatRoom roomId={roomId} />
         </>
       )}
 

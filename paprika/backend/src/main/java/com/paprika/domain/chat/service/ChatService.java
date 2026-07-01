@@ -2,11 +2,15 @@ package com.paprika.domain.chat.service;
 
 import com.paprika.domain.chat.entity.ChatMessage;
 import com.paprika.domain.chat.entity.ChatRoom;
+import com.paprika.domain.chat.entity.ChatPost;
 import com.paprika.domain.chat.repository.ChatMessageRepository;
 import com.paprika.domain.chat.repository.ChatRoomRepository;
+import com.paprika.domain.chat.repository.ChatPostRepository;
+import com.paprika.global.exception.ErrorCode;
+import com.paprika.global.exception.PaprikaException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +21,7 @@ import java.util.List;
 /**
  * 채팅 서비스
  * 담당: C - 한대천
- *
+
  * TODO:
  *  - 메시지 저장 및 WebSocket 브로드캐스트
  *  - 이전 메시지 페이징 조회 (무한 스크롤)
@@ -31,15 +35,20 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatPostRepository chatPostRepository; // posts 조회(판매자) — 채팅 전용 read-only
 
     /**
      * "채팅하기" 진입 — 항상 방 목록(List)을 반환한다. 프론트는 개수만 보고 UI를 정한다.
-     *  - 내가 이 상품의 판매자면: 나에게 온 문의 방들 (0~N개), 새로 만들지 않음.
+     *  - 내가 이 게시글의 판매자면: 나에게 온 문의 방들 (0~N개), 새로 만들지 않음.
      *  - 내가 구매자면: 나↔판매자 방을 get-or-create 해서 항상 1개를 담아 반환.
+
+     * 판매자(sellerId)는 클라이언트가 보내지 않고 postId로 posts 테이블에서 서버가 조회한다 (조작 방지).
      */
     @Transactional
-    public List<ChatRoom> enterChatRooms(Long postId, Long currentUserId, Long sellerId) {
+    public List<ChatRoom> enterChatRooms(Long postId, Long currentUserId) {
+        Long sellerId = chatPostRepository.findById(postId)
+                .map(ChatPost::getSellerId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.POST_NOT_FOUND));
         if (currentUserId.equals(sellerId)) {
             return chatRoomRepository.findByPostIdAndSellerId(postId, currentUserId);
         }
@@ -53,10 +62,18 @@ public class ChatService {
      */
     @Transactional
     public ChatRoom getOrCreateRoom(Long postId, Long buyerId, Long sellerId) {
-        // DB 유니크 제약이 (post_id, buyer_id)이므로 그 키로 조회한다 (상품당 구매자 1방).
+        // DB 유니크 제약이 (post_id, buyer_id)이므로 그 키로 조회한다 (게시글당 구매자 1방).
         return chatRoomRepository
                 .findByPostIdAndBuyerId(postId, buyerId)
-                .orElseGet(() -> chatRoomRepository.save(ChatRoom.create(postId, buyerId, sellerId)));
+                .orElseGet(() -> {
+                    try {
+                        return chatRoomRepository.save(ChatRoom.create(postId, buyerId, sellerId));
+                    } catch (DataIntegrityViolationException e) {
+                        // 동시 요청이 uq_chat_room(post_id, buyer_id)에 먼저 걸린 경우: 방금 생성된 방을 재조회
+                        return chatRoomRepository.findByPostIdAndBuyerId(postId, buyerId)
+                                .orElseThrow(() -> e);
+                    }
+                });
     }
 
     /** 메시지 저장 (room_id, sender_id, content). created_at은 자동. */

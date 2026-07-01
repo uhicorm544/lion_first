@@ -5,7 +5,7 @@
  * 담당: C - 한대천
  *
  * 클래스는 루트(.list) 하나만. 나머지는 ChatRoomList.module.css에서 구조로 선택.
- * 상대 닉네임/상품 정보는 User·Product 도메인 조인 필요 → 지금은 구매자 id만 표시.
+ * 상대 닉네임/게시글 정보는 채팅 전용 Post 조인 필요 → 지금은 구매자 id만 표시.
  */
 import styles from './ChatRoomList.module.css';
 

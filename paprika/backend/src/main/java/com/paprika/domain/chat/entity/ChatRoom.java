@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
  * 담당: C - 한대천
  *
  * TODO:
- *  - Product 엔티티와 연관 관계 (B - 백성민과 협의)
  *  - 채팅방 마지막 메시지 미리보기
  *  - 읽지 않은 메시지 카운트
  */
@@ -28,7 +27,7 @@ public class ChatRoom {
     private Long id;
 
     @Column(name = "post_id", nullable = false)
-    private Long postId;  // TODO: Product와 @ManyToOne (DB 컬럼은 post_id로 통일됨)
+    private Long postId;  // posts.id (채팅 전용 Post 엔티티로 조회)
 
     private Long buyerId;    // TODO: User와 @ManyToOne
 
