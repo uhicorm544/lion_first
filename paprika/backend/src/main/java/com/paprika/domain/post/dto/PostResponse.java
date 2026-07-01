@@ -25,7 +25,7 @@ public record PostResponse(
         boolean active,
         PostCategory category,
         int viewCount,
-        Instant createAt) {
+        Instant createdAt) {
     public static PostResponse from(Post post) {
         return PostResponse.builder()
                 .id(post.getId())
@@ -39,7 +39,7 @@ public record PostResponse(
                 .active(post.isActive())
                 .category(post.getCategory())
                 .viewCount(post.getViewCount())
-                .createAt(post.getCreatedAt())
+                .createdAt(post.getCreatedAt())
                 .build();
     }
 }

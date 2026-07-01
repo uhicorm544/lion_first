@@ -1,7 +1,11 @@
 package com.paprika.domain.post.controller;
 
+import com.paprika.domain.post.dto.PostResponse;
+import com.paprika.domain.post.entity.Post.PostCategory;
+import com.paprika.domain.post.service.PostService;
 import com.paprika.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -28,21 +32,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostController {
 
-    // TODO: private final ProductService productService;
+    private final PostService postService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Object>> getPosts(
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String keyword) {
-        // TODO: 구현
-        return ResponseEntity.ok(ApiResponse.ok(null));
+            @RequestParam(required = false) PostCategory category) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.getPostsByCategory(category, pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Object>> getPost(@PathVariable Long id) {
-        // TODO: 구현
-        return ResponseEntity.ok(ApiResponse.ok(null));
+    public ResponseEntity<ApiResponse<PostResponse>> getPost(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.getPostById(id)));
     }
 
     @PostMapping

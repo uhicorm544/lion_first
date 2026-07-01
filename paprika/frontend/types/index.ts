@@ -40,6 +40,21 @@ export interface Product {
   createdAt: string;
 }
 
+export interface PostApiResponse {
+  id: number;
+  userId: number;
+  title: string;
+  content: string;
+  latitude: number;
+  longitude: number;
+  thumbnailUrl: string | null;
+  currentPrice: number;
+  active: boolean;
+  category: string | null;
+  viewCount: number;
+  createdAt: string;
+}
+
 // Chat (C - 한대천)
 export interface ChatRoom {
   id: number;

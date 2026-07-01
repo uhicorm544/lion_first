@@ -1,5 +1,7 @@
 package com.paprika.domain.post.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -7,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.paprika.domain.post.entity.Post;
+import com.paprika.domain.post.entity.Post.PostCategory;
 
 /**
  * 담당: B - 백성민
@@ -14,14 +17,11 @@ import com.paprika.domain.post.entity.Post;
  */
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    Page<Post> findByCategory(String category, Pageable pageable);
+    Page<Post> findByCategoryAndActiveTrue(PostCategory category, Pageable pageable);
 
-    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword%")
-    Page<Post> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword%")
+    Page<Post> searchPostsByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
-    Page<Post> findById(Long id, Pageable pageable);
+    Optional<Post> findByIdAndActiveTrue(Long id);
 
-    // 1. TODO: Search -> how?
-    // 1) Like
-    // 2) cacheing 전략?
 }
