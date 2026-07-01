@@ -1,10 +1,14 @@
 package com.paprika.domain.mypage.service;
 
+import com.paprika.domain.mypage.entity.MyPagePostImage;
+import com.paprika.domain.mypage.repository.MyPagePostImageRepository;
 import com.paprika.domain.mypage.entity.MyPageUser;
+import com.paprika.domain.mypage.entity.WishList;
 import com.paprika.domain.mypage.repository.MyPageUserRepository;
 import com.paprika.domain.mypage.dto.ProfileResponse;
 import com.paprika.domain.mypage.dto.ProfileUpdateRequest;
 import com.paprika.domain.mypage.dto.TransactionSummaryResponse;
+import com.paprika.domain.mypage.dto.WishListResponse;
 import com.paprika.domain.mypage.repository.ReviewRepository;
 import com.paprika.domain.mypage.repository.WishListRepository;
 import com.paprika.domain.transaction.entity.Transaction.TransactionStatus;
@@ -42,6 +46,7 @@ public class MyPageService {
     private final WishListRepository wishListRepository;
     private final MyPageUserRepository myPageUserRepository;
     private final TransactionRepository transactionRepository;
+    private final MyPagePostImageRepository myPagePostImageRepository;
 
     /**
      * 내 프로필 조회
@@ -89,26 +94,32 @@ public class MyPageService {
     /**
      * 나의 거래 내역 조회 (탭별)
      * GET /api/v1/users/me/transactions?tab=all|buy|sell|selling
-     *
-     * - buy: 내가 구매자인 거래 전체
-     * - sell: 내가 판매자인 거래 전체
-     * - selling: 내가 판매자이며 진행중(PENDING/AGREED)인 거래
-     * - all: 구매 + 판매 합산, 최신순 정렬
-     *
-     * TODO: 거래 취소 후 상품 상태 복구 - D(이동준), B(백성민)과 협의 필요
      */
     public List<TransactionSummaryResponse> getMyTransactions(Long userId, String tab) {
         return switch (tab) {
             case "buy" -> transactionRepository
                     .findByBuyerIdOrderByCreatedAtDesc(userId)
                     .stream()
-                    .map(t -> TransactionSummaryResponse.from(t, "BUYER"))
+                    .map(t -> {
+                        String imgUrl = myPagePostImageRepository
+                                .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                .map(MyPagePostImage::getImgUrl)
+                                .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/80/80");//상품사진이 없을떄 기본이미지 나중에변경
+                        return TransactionSummaryResponse.from(t, "BUYER", imgUrl);
+                    })
                     .collect(Collectors.toList());
 
             case "sell" -> transactionRepository
                     .findBySellerIdOrderByCreatedAtDesc(userId)
                     .stream()
-                    .map(t -> TransactionSummaryResponse.from(t, "SELLER"))
+                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED || t.getStatus() == TransactionStatus.CANCELLED)
+                    .map(t -> {
+                        String imgUrl = myPagePostImageRepository
+                                .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                .map(MyPagePostImage::getImgUrl)
+                                .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/80/80");//상품사진이 없을떄 기본이미지 나중에변경
+                        return TransactionSummaryResponse.from(t, "SELLER", imgUrl);
+                    })
                     .collect(Collectors.toList());
 
             case "selling" -> transactionRepository
@@ -116,18 +127,64 @@ public class MyPageService {
                     .stream()
                     .filter(t -> t.getStatus() == TransactionStatus.PENDING
                               || t.getStatus() == TransactionStatus.AGREED)
-                    .map(t -> TransactionSummaryResponse.from(t, "SELLER"))
+                    .map(t -> {
+                        String imgUrl = myPagePostImageRepository
+                                .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                .map(MyPagePostImage::getImgUrl)
+                                .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/80/80");//상품사진이 없을떄 기본이미지 나중에변경
+                        return TransactionSummaryResponse.from(t, "SELLER", imgUrl);
+                    })
                     .collect(Collectors.toList());
 
             default -> {
                 List<TransactionSummaryResponse> all = new ArrayList<>();
                 transactionRepository.findByBuyerIdOrderByCreatedAtDesc(userId)
-                        .forEach(t -> all.add(TransactionSummaryResponse.from(t, "BUYER")));
+                        .forEach(t -> {
+                            String imgUrl = myPagePostImageRepository
+                                    .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                    .map(MyPagePostImage::getImgUrl)
+                                    .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/80/80");//상품사진이 없을떄 기본이미지 나중에변경
+                            all.add(TransactionSummaryResponse.from(t, "BUYER", imgUrl));
+                        });
                 transactionRepository.findBySellerIdOrderByCreatedAtDesc(userId)
-                        .forEach(t -> all.add(TransactionSummaryResponse.from(t, "SELLER")));
+                        .forEach(t -> {
+                            String imgUrl = myPagePostImageRepository
+                                    .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                    .map(MyPagePostImage::getImgUrl)
+                                    .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/80/80");//상품사진이 없을떄 기본이미지 나중에변경
+                            all.add(TransactionSummaryResponse.from(t, "SELLER", imgUrl));
+                        });
                 all.sort(Comparator.comparing(TransactionSummaryResponse::getCreatedAt).reversed());
                 yield all;
             }
         };
+        
+    }
+    public List<WishListResponse> getMyWishList(Long userId) {
+        return wishListRepository.findByUserId(userId)
+                .stream()
+                .map(w -> {
+                    String imgUrl = myPagePostImageRepository
+                            .findFirstByPostIdAndActiveTrue(w.getProductId())
+                            .map(MyPagePostImage::getImgUrl)
+                            .orElse("https://picsum.photos/seed/product" + w.getProductId() + "/80/80");//상품사진이 없을떄 기본이미지 나중에변경
+                    return WishListResponse.from(w, imgUrl);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void addWishList(Long userId, Long productId) {
+        if (wishListRepository.existsByUserIdAndProductId(userId, productId)) {
+            throw new PaprikaException(ErrorCode.INVALID_INPUT);
+        }
+        wishListRepository.save(WishList.of(userId, productId));
+    }
+
+    @Transactional
+    public void removeWishList(Long userId, Long productId) {
+        WishList wishList = wishListRepository.findByUserIdAndProductId(userId, productId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.INVALID_INPUT));
+        wishListRepository.delete(wishList);
     }
 }

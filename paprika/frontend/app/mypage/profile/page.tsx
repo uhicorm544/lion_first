@@ -70,7 +70,7 @@ export default function ProfilePage() {
     } catch {
         alert('이미지 업로드 실패');
     }
-    };
+  };
 
   const isSaveEnabled = tempNickname === nickname || isNicknameChecked;
 

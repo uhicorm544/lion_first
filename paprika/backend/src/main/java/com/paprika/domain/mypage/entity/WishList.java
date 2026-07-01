@@ -31,4 +31,11 @@ public class WishList {
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+    public static WishList of(Long userId, Long productId) {
+        WishList w = new WishList();
+        w.userId = userId;
+        w.productId = productId;
+        return w;
+    }
 }

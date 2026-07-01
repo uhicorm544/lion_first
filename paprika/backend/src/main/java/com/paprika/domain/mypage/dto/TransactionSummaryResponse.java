@@ -28,9 +28,9 @@ public class TransactionSummaryResponse {
     private BigDecimal itemPrice;
     private BigDecimal amount;
     private LocalDateTime createdAt;
-    private String imgUrl;     // TODO: B(백성민) PostImageRepository 연동 후 실제 이미지로 교체
+    private String imgUrl;
 
-    public static TransactionSummaryResponse from(Transaction t, String myRole) {
+    public static TransactionSummaryResponse from(Transaction t, String myRole, String imgUrl) {
         return TransactionSummaryResponse.builder()
                 .id(t.getId())
                 .postId(t.getPostId())
@@ -40,7 +40,7 @@ public class TransactionSummaryResponse {
                 .itemPrice(t.getItemPrice())
                 .amount(t.getAmount())
                 .createdAt(t.getCreatedAt())
-                .imgUrl("https://picsum.photos/seed/post" + t.getPostId() + "/80/80") // 임시
+                .imgUrl(imgUrl)
                 .build();
     }
 }

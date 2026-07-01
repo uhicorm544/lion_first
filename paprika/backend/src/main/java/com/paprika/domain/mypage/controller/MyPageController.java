@@ -3,6 +3,7 @@ package com.paprika.domain.mypage.controller;
 import com.paprika.domain.mypage.dto.ProfileResponse;
 import com.paprika.domain.mypage.dto.ProfileUpdateRequest;
 import com.paprika.domain.mypage.dto.TransactionSummaryResponse;
+import com.paprika.domain.mypage.dto.WishListResponse;
 import com.paprika.domain.mypage.service.MyPageService;
 import com.paprika.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -85,20 +86,24 @@ public class MyPageController {
     }
 
     @GetMapping("/me/wishlist")
-    public ResponseEntity<ApiResponse<Object>> getWishList() {
-        // TODO: 구현
-        return ResponseEntity.ok(ApiResponse.ok(null));
+    public ResponseEntity<ApiResponse<List<WishListResponse>>> getMyWishList(Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getMyWishList(userId)));
     }
 
     @PostMapping("/me/wishlist/{productId}")
-    public ResponseEntity<ApiResponse<Void>> addWish(@PathVariable Long productId) {
-        // TODO: 구현
-        return ResponseEntity.ok(ApiResponse.ok("관심 상품에 추가되었습니다.", null));
+    public ResponseEntity<ApiResponse<Void>> addWishList(
+            @PathVariable Long productId, Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        myPageService.addWishList(userId, productId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @DeleteMapping("/me/wishlist/{productId}")
-    public ResponseEntity<ApiResponse<Void>> removeWish(@PathVariable Long productId) {
-        // TODO: 구현
-        return ResponseEntity.ok(ApiResponse.ok("관심 상품에서 제거되었습니다.", null));
+    public ResponseEntity<ApiResponse<Void>> removeWishList(
+            @PathVariable Long productId, Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        myPageService.removeWishList(userId, productId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }
