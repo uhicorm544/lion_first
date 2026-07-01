@@ -31,3 +31,8 @@ gradle*
 !backend/gradle/wrapper/
 !backend/gradle/wrapper/gradle-wrapper.jar
 !backend/gradle/wrapper/gradle-wrapper.properties
+
+# local 제외
+build-local.gradle
+application-local.yaml
+application-local.yml
