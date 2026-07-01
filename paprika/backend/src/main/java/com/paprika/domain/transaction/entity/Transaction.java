@@ -93,9 +93,8 @@ public class Transaction {
     }
 
     /** 거래 취소 */
-    public void cancel(CancelledBy cancelledBy) {
+    public void cancel() {
         this.status = TransactionStatus.CANCELLED;
-        this.cancelledBy = cancelledBy;
     }
 
     public enum TransactionType { DIRECT, DELIVERY }

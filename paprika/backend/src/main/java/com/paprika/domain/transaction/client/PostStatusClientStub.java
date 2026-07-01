@@ -23,4 +23,9 @@ public class PostStatusClientStub implements PostStatusClient {
     public void markCompleted(Long postId) {
      
     }
+
+    @Override
+    public void markSelling(Long postId) {
+
+    }
 }

@@ -42,7 +42,6 @@ export default function Header() {
           <Link href="/products">Categories</Link>
           <Link href="/chat">Chat</Link>
           <Link href="/mypage">My Page</Link>
-          <Link href="/transactions/status">Transactions</Link>
         </nav>
 
         <div className={styles.actions}>

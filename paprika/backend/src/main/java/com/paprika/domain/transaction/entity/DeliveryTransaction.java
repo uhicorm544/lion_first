@@ -37,10 +37,6 @@ public class DeliveryTransaction {
         this.deliveryStatus = DeliveryStatus.IN_TRANSIT;
     }
 
-    public void markDelivered() {
-        this.deliveryStatus = DeliveryStatus.DELIVERED;
-    }
-
     public void cancel() {
         this.deliveryStatus = DeliveryStatus.CANCELED;
     }

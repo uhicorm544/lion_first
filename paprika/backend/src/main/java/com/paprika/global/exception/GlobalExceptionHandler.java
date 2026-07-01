@@ -2,7 +2,9 @@ package com.paprika.global.exception;
 
 import com.paprika.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +28,28 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse(ErrorCode.INVALID_INPUT.getMessage());
         return ResponseEntity.badRequest().body(ApiResponse.fail(message));
+    }
+
+    // 잘못된 요청 값(예: 존재하지 않는 상품) -> 400, 실제 사유를 그대로 전달
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("IllegalArgumentException: {}", e.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    // 현재 상태에서 처리 불가(예: 이미 진행 중인 거래) -> 409 Conflict, 실제 사유를 그대로 전달
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException e) {
+        log.warn("IllegalStateException: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    // 본문 파싱 실패(예: 잘못된 날짜·시간 형식 "1232-13-21T32:31") -> 500이 아닌 400으로 응답
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
+        log.warn("HttpMessageNotReadableException: {}", e.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail("요청 형식이 올바르지 않습니다. 입력값(날짜·시간 등)을 확인해 주세요."));
     }
 
     @ExceptionHandler(Exception.class)

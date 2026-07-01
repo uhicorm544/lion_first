@@ -4,95 +4,10 @@
   padding: 40px 24px;
 }
 
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.buttonRow {
-  display: flex;
-  flex-direction: row;
-  gap: 16px;
-}
-
-.optionButton,
-.optionActive {
-  width: 100%;
-  padding: 18px 20px;
-  border-radius: 18px;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.optionButton {
-  border: 1px solid var(--color-outline-variant);
-  background: var(--color-surface-container);
-  color: var(--color-on-surface);
-}
-
-.optionActive {
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary-container);
-  color: var(--color-on-primary);
-}
-
-.optionButton:disabled,
-.optionActive:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.label {
+.loading {
+  margin: 0;
   font-size: 14px;
-  font-weight: 700;
   color: var(--color-on-surface-variant);
-}
-
-.input {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--color-outline-variant);
-  background: var(--color-surface-container);
-  font-size: 15px;
-}
-
-.completeButton {
-  width: 100%;
-  padding: 18px 20px;
-  border-radius: 18px;
-  border: none;
-  font-size: 17px;
-  font-weight: 700;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-.primaryButton {
-  width: 100%;
-  border-radius: 18px;
-  padding: 16px 20px;
-  border: none;
-  font-size: 16px;
-  font-weight: 700;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  cursor: pointer;
-}
-
-.primaryButton:disabled {
-  background: var(--color-surface-container);
-  color: var(--color-on-surface-variant);
-  cursor: not-allowed;
-  opacity: 0.7;
+  text-align: center;
+  padding: 24px 0;
 }

@@ -95,6 +95,7 @@ export default function MapView({ placeId, onPick }: MapViewProps) {
 
       const { Place } = placesLibRef.current;
       const place = new Place({ id: placeId });
+      //fetchFields:Google Places API에 “이 placeId의 상세 정보를 가져온다.
       await place.fetchFields({ fields: ['location'] });
 
       if (!place.location) {

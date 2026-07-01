@@ -1,0 +1,150 @@
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
+.empty {
+  font-size: 15px;
+  color: var(--color-on-surface-variant);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--color-primary-container);
+  color: var(--color-on-primary);
+}
+
+.doneBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.confirmRow {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.confirmButton,
+.confirmDone {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmButton {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.confirmDone {
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface);
+  color: var(--color-on-surface-variant);
+  cursor: not-allowed;
+}
+
+.meetingRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meetingLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-on-surface-variant);
+}
+
+.meetingValue {
+  font-size: 14px;
+  color: var(--color-on-surface);
+  text-align: right;
+}
+
+.cancelButton {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--color-outline-variant);
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--color-surface);
+  color: var(--color-error, #d92d20);
+  cursor: pointer;
+}
+
+.deleteButton {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--color-outline-variant);
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--color-surface);
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+}

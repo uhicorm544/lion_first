@@ -81,6 +81,15 @@ export interface Transaction {
   createdAt: string;
 }
 
+// 거래 화면 표시용 상품 정보 (GET /api/v1/transactions/post-info/{postId})
+export interface PostInfo {
+  postId: number;
+  title: string;
+  price: number;
+  sellerId: number;
+  status: ProductStatus;
+}
+
 // Review (E - 장인호)
 export interface Review {
   id: number;

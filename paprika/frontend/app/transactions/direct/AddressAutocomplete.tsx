@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './AddressAutocomplete.module.css';
 
+//우리가 가공한 데이터
 interface Suggestion {
   placeId: string;
   text: string;
   mainText: string;
   secondaryText: string;
 }
-
+//Google API가 주는 원본
 interface GooglePrediction {
   placeId?: string;
   text?: { text?: string };
@@ -82,7 +83,7 @@ export default function AddressAutocomplete({
             includedRegionCodes: ['kr'],
           }),
         });
-
+        //GoogleSuggestion : 구글 주소 API가 응답으로 돌려주는 추천 항목 한 개의 "타입(모양)
         const data: { suggestions?: GoogleSuggestion[] } = await response.json();
         const parsed: Suggestion[] = (data.suggestions ?? [])
           .filter((item): item is Required<GoogleSuggestion> => Boolean(item.placePrediction))
@@ -95,7 +96,7 @@ export default function AddressAutocomplete({
               secondaryText: prediction.structuredFormat?.secondaryText?.text ?? '',
             };
           });
-
+          //parsed : 추천 주소 목록 변수
         setSuggestions(parsed);
         setOpen(parsed.length > 0);
       } catch {
@@ -123,13 +124,14 @@ export default function AddressAutocomplete({
         type="text"
         autoComplete="off"
         placeholder={placeholder}
+        //value : 입력한 주소
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onBlur={() => setOpen(false)}
       />
-      
-      // 자동완성 추천 목록을 화면에 실제로 그리는 JSX
+
+      {/* 자동완성 추천 목록을 화면에 실제로 그리는 JSX */}
       {open && suggestions.length > 0 && (
         <ul className={styles.list}>
           {suggestions.map((suggestion) => (
