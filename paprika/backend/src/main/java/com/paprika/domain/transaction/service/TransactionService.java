@@ -73,6 +73,9 @@ public class TransactionService {
 
         // 상품 조회로 판매자(작성자) 확보
         PostInfo postInfo = postQueryClient.getPostInfo(request.getPostId());
+        if (buyerId.equals(postInfo.sellerId())) {
+            throw new IllegalArgumentException("본인이 등록한 상품은 구매할 수 없습니다.");
+        }
 
         PaymentMethod paymentMethod = null;
         BigDecimal fee = BigDecimal.ZERO;
@@ -98,6 +101,7 @@ public class TransactionService {
                 .fee(fee)
                 .build();
         transactionRepository.save(transaction);
+        transactionRepository.flush();
 
         // 방식(type)에 따라 하위 1:1 상세 엔티티 생성
         DirectTransaction direct = null;
