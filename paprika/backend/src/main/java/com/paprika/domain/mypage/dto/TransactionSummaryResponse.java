@@ -30,6 +30,7 @@ public class TransactionSummaryResponse {
     private LocalDateTime createdAt;
     private String imgUrl;
     private Long reviewId; // 작성한 리뷰 id (없으면 null = 아직 리뷰 안 씀, 구매 완료 건에만 의미 있음)
+    private String cancelledBy; // BUYER, SELLER / 취소 아닐 때 null (D - 이동준 Transaction.cancelledBy 그대로 노출)
 
     public static TransactionSummaryResponse from(Transaction t, String myRole, String imgUrl, Long reviewId) {
         return TransactionSummaryResponse.builder()
@@ -43,6 +44,7 @@ public class TransactionSummaryResponse {
                 .createdAt(t.getCreatedAt())
                 .imgUrl(imgUrl)
                 .reviewId(reviewId)
+                .cancelledBy(t.getCancelledBy() != null ? t.getCancelledBy().name() : null)
                 .build();
     }
 }

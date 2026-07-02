@@ -117,6 +117,7 @@ export interface MyPageTransaction {
   createdAt: string;
   imgUrl: string;
   reviewId: number | null;
+  cancelledBy: 'BUYER' | 'SELLER' | null;
 }
 // Wishlist
 export interface WishListItem {

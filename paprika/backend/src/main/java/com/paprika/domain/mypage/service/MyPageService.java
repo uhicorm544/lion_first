@@ -122,6 +122,7 @@ public class MyPageService {
             case "buy" -> transactionRepository
                     .findByBuyerIdOrderByCreatedAtDesc(userId)
                     .stream()
+                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
                     .map(t -> {
                         String imgUrl = myPagePostImageRepository
                                 .findFirstByPostIdAndActiveTrue(t.getPostId())
@@ -132,10 +133,24 @@ public class MyPageService {
                     })
                     .collect(Collectors.toList());
 
+            case "buying" -> transactionRepository
+                    .findByBuyerIdOrderByCreatedAtDesc(userId)
+                    .stream()
+                    .filter(t -> t.getStatus() == TransactionStatus.PENDING
+                              || t.getStatus() == TransactionStatus.AGREED)
+                    .map(t -> {
+                        String imgUrl = myPagePostImageRepository
+                                .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                .map(MyPagePostImage::getImgUrl)
+                                .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/320/320");//상품사진이 없을떄 기본이미지 나중에변경
+                        return TransactionSummaryResponse.from(t, "BUYER", imgUrl, null);
+                    })
+                    .collect(Collectors.toList());
+
             case "sell" -> transactionRepository
                     .findBySellerIdOrderByCreatedAtDesc(userId)
                     .stream()
-                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED || t.getStatus() == TransactionStatus.CANCELLED)
+                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
                     .map(t -> {
                         String imgUrl = myPagePostImageRepository
                                 .findFirstByPostIdAndActiveTrue(t.getPostId())
@@ -158,6 +173,32 @@ public class MyPageService {
                         return TransactionSummaryResponse.from(t, "SELLER", imgUrl, null);
                     })
                     .collect(Collectors.toList());
+
+            case "cancelled" -> {
+                List<TransactionSummaryResponse> cancelled = new ArrayList<>();
+                transactionRepository.findByBuyerIdOrderByCreatedAtDesc(userId)
+                        .stream()
+                        .filter(t -> t.getStatus() == TransactionStatus.CANCELLED)
+                        .forEach(t -> {
+                            String imgUrl = myPagePostImageRepository
+                                    .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                    .map(MyPagePostImage::getImgUrl)
+                                    .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/320/320");//상품사진이 없을떄 기본이미지 나중에변경
+                            cancelled.add(TransactionSummaryResponse.from(t, "BUYER", imgUrl, null));
+                        });
+                transactionRepository.findBySellerIdOrderByCreatedAtDesc(userId)
+                        .stream()
+                        .filter(t -> t.getStatus() == TransactionStatus.CANCELLED)
+                        .forEach(t -> {
+                            String imgUrl = myPagePostImageRepository
+                                    .findFirstByPostIdAndActiveTrue(t.getPostId())
+                                    .map(MyPagePostImage::getImgUrl)
+                                    .orElse("https://picsum.photos/seed/post" + t.getPostId() + "/320/320");//상품사진이 없을떄 기본이미지 나중에변경
+                            cancelled.add(TransactionSummaryResponse.from(t, "SELLER", imgUrl, null));
+                        });
+                cancelled.sort(Comparator.comparing(TransactionSummaryResponse::getCreatedAt).reversed());
+                yield cancelled;
+            }
 
             default -> {
                 List<TransactionSummaryResponse> all = new ArrayList<>();

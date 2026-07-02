@@ -1,5 +1,15 @@
 'use client';
 
+/**
+ * 구매중 페이지
+ * 담당: E - 장인호
+ *
+ * 내가 구매자인 거래 중 진행중(PENDING/AGREED)인 것만 보여준다.
+ * 완료/취소 건은 각각 구매내역/취소내역 탭으로 이동한다.
+ *
+ * TODO: 거래취소 버튼은 UI만 있고 아직 실제로 취소 요청을 보내지 않는다.
+ *       D(이동준)님이 만든 PATCH /api/v1/transactions/{id}/status (status: CANCELLED)에 연동 예정.
+ */
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { MyPageTransaction } from '@/types';
@@ -12,13 +22,13 @@ const statusLabels: Record<string, string> = {
   AGREED: '거래 확정',
 };
 
-export default function SellingPage() {
+export default function BuyingPage() {
   const [transactions, setTransactions] = useState<MyPageTransaction[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
-    api.get(`/api/v1/users/me/transactions?tab=selling&page=${page}&size=${PAGE_SIZE}`)
+    api.get(`/api/v1/users/me/transactions?tab=buying&page=${page}&size=${PAGE_SIZE}`)
       .then((res) => {
         const fetchedTotalPages = res.data.data.totalPages;
         if (page > 0 && page >= fetchedTotalPages) {
@@ -33,10 +43,10 @@ export default function SellingPage() {
 
   return (
     <section>
-      <h1 className={styles.title}>판매중</h1>
+      <h1 className={styles.title}>구매중</h1>
 
       {transactions.length === 0 ? (
-        <div className={styles.empty}>현재 판매 중인 상품이 없습니다.</div>
+        <div className={styles.empty}>현재 구매 진행중인 상품이 없습니다.</div>
       ) : (
         <>
         <div className={styles.list}>

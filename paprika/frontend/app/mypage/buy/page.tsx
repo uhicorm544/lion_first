@@ -112,7 +112,7 @@ export default function BuyOrdersPage() {
             <div key={t.id} className={sharedStyles.card}>
               <img src={t.imgUrl} alt="상품" className={sharedStyles.cardImg} />
               <div className={sharedStyles.cardInfo}>
-                <p className={sharedStyles.cardTitle}>상품 #{t.postId}</p>
+                <p className={sharedStyles.cardTitle}>상품 #{t.postId} (거래 #{t.id})</p>
                 <p className={sharedStyles.cardType}>{t.type === 'DIRECT' ? '직거래' : '택배'}</p>
               </div>
               <div className={sharedStyles.cardRight}>

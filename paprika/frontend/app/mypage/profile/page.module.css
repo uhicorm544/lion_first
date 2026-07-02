@@ -133,3 +133,18 @@
   color: var(--color-secondary);
   margin-top: 8px;
 }
+
+.dangerZone {
+  margin-top: 24px;
+  text-align: right;
+}
+
+.withdrawBtn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #e53935;
+  background: transparent;
+  color: #e53935;
+  font-size: 13px;
+  cursor: pointer;
+}

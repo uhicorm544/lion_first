@@ -50,6 +50,16 @@
   background: transparent;
 }
 
+.cancelTransactionBtn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e53935;
+  cursor: pointer;
+  color: #e53935;
+  background: transparent;
+  font-size: 13px;
+}
+
 /* 메인 페이지 전용 */
 .pageGrid { display: grid; gap: 24px; }
 

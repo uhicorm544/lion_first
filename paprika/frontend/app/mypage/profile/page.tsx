@@ -5,12 +5,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { uploadImage } from '@/lib/image';
+import { clearTokens } from '@/lib/auth';
 import styles from './page.module.css';
 import MannerTemperature from '@/components/mypage/MannerTemperature';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nickname, setNickname] = useState('');
   const [tempNickname, setTempNickname] = useState('');
@@ -85,6 +88,19 @@ export default function ProfilePage() {
 
   const isSaveEnabled = tempNickname === nickname || isNicknameChecked;
 
+  // TODO: A(민동현)님이 회원 탈퇴 API 구현 전까지는 기능 없음(요청만 하고 실패로 끝남).
+  // 엔드포인트가 생기면 별도 수정 없이 바로 정상 동작함.
+  const handleWithdraw = async () => {
+    if (!confirm('정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+    try {
+      await api.delete('/api/v1/users/me');
+      clearTokens();
+      router.push('/login');
+    } catch {
+      // API 미구현 - 지금은 아무 동작 안 함
+    }
+  };
+
   return (
     <section>
       <h1 className={styles.title}>회원정보 수정</h1>
@@ -139,6 +155,10 @@ export default function ProfilePage() {
             <MannerTemperature score={temperature} />
           </div>
         </div>
+      </div>
+
+      <div className={styles.dangerZone}>
+        <button onClick={handleWithdraw} className={styles.withdrawBtn}>회원 탈퇴하기</button>
       </div>
     </section>
   );
