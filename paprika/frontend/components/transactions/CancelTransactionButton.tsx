@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import api from '@/lib/api';
 import type { ApiResponse } from '@/types';
 import styles from './CancelTransactionButton.module.css';
 
+/** GET /api/v1/transactions 응답에서 취소 대상 찾을 때 쓰는 최소 필드 */
 interface TransactionSummary {
   id: number;
   postId: number;
@@ -14,51 +14,52 @@ interface TransactionSummary {
 }
 
 interface CancelTransactionButtonProps {
-  /** 취소할 거래 id (부모 list/map에서 알고 있을 때) */
+  /** 취소할 거래 id (마이페이지 목록 등 — 부모가 알고 있을 때) */
   transactionId?: number;
-  /** 상품 id — prop 또는 /products/:id URL에서 연결 */
+  /** 상품 id — transactionId 없을 때 내 진행 중 거래를 API로 찾을 때 사용 */
   postId?: number;
-  /** API 성공 시 부모 list에서 해당 id를 제거하는 핸들러 */
+  /** API 성공 후 부모 목록에서 해당 거래를 제거하는 콜백 */
   deleteHandler: (id: number) => void;
   disabled?: boolean;
   className?: string;
   confirmMessage?: string;
 }
 
+/** 취소 가능한 거래 상태 — PENDING(요청), AGREED(확정)만 허용 */
 const IN_PROGRESS = new Set(['PENDING', 'AGREED']);
 
 /**
  * 거래 취소 버튼 (재사용 모듈)
+ * 담당: D - 이동준
  *
- * 사용 패턴 (부모 list):
- *   <CancelTransactionButton transactionId={item.id} deleteHandler={deleteHandler} />
+ * ── 사용 패턴 (부모가 연결 값을 prop으로 넘김) ──
+ * 1) 거래 id를 알 때 (마이페이지 목록 등):
+ *    <CancelTransactionButton transactionId={item.id} deleteHandler={deleteHandler} />
  *
- * 사용 패턴 (상품 상세 — TradeButton과 같이 postId만 연결):
- *   <CancelTransactionButton postId={2} deleteHandler={deleteHandler} />
- *   <CancelTransactionButton deleteHandler={deleteHandler} />  // /products/2 URL에서 자동
+ * 2) 상품 id만 알 때:
+ *    <CancelTransactionButton postId={item.postId} deleteHandler={deleteHandler} />
  *
- * 흐름: 클릭 → PATCH CANCELLED → success → deleteHandler(id)
- *       (서버에서 해당 상품 post_status → SELLING 복구)
+ * ── 동작 흐름 ──
+ * 1. transactionId prop 있음 → 그대로 사용
+ * 2. 없으면 postId prop으로 내 거래 목록 API에서 진행 중 거래 1건 조회
+ * 3. 둘 다 없거나 진행 중 거래 없음 → 버튼 숨김
+ * 4. 클릭 → confirm → PATCH CANCELLED → deleteHandler(id)
+ *
+ * ※ 취소는 해당 거래의 구매자/판매자만 가능 (백엔드 검증)
  */
 export default function CancelTransactionButton({
   transactionId: transactionIdProp,
-  postId: postIdProp,
+  postId,
   deleteHandler,
   disabled = false,
   className,
   confirmMessage = '거래를 취소하시겠어요?',
 }: CancelTransactionButtonProps) {
-  const pathname = usePathname();
-  const postId = useMemo(() => {
-    if (postIdProp != null) {
-      return postIdProp;
-    }
-    const fromUrl = pathname.match(/^\/products\/([^/]+)$/)?.[1];
-    return fromUrl ? Number(fromUrl) : null;
-  }, [pathname, postIdProp]);
-
+  //최종적으로 취소할 거래 ID
   const [resolvedId, setResolvedId] = useState<number | null>(transactionIdProp ?? null);
+  //API로 거래 찾는 중인지
   const [resolving, setResolving] = useState(false);
+  //취소 PATCH 요청 중인지
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -87,6 +88,7 @@ export default function CancelTransactionButton({
       .catch(() => {
         if (active) setResolvedId(null);
       })
+      //조회끝나면 확인중 문구해제
       .finally(() => {
         if (active) setResolving(false);
       });

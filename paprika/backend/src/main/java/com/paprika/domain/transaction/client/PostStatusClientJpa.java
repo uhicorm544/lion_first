@@ -1,52 +1,40 @@
 package com.paprika.domain.transaction.client;
 
-import com.paprika.domain.post.entity.Post;
-import com.paprika.domain.post.entity.Post.PostStatus;
-import com.paprika.domain.post.repository.PostRepository;
+import com.paprika.domain.post.service.IPostStatusUpdater;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
- * PostStatusClient 실제 구현 (post 테이블 상태 변경)
+ * PostStatusClient 실제 구현 (post 도메인 IPostStatusUpdater 위임)
  * 담당: D - 이동준
  *
- * 거래 이벤트에 맞춰 post.post_status를 갱신한다.
- *  - AGREED    -> RESERVED
- *  - COMPLETED -> SOLD
- *  - CANCELLED -> SELLING (복구)
+ * 거래 이벤트에 맞춰 post 담당 팀의 상태 변경 인터페이스를 호출한다.
+ *  - AGREED    -> reservePost (RESERVED)
+ *  - COMPLETED -> soldPost (SOLD)
+ *  - CANCELLED -> sellingPostAsCanceled (SELLING 복구)
  */
 @Primary
 @Component
 public class PostStatusClientJpa implements PostStatusClient {
 
-    private final PostRepository postRepository;
+    private final IPostStatusUpdater postStatusUpdater;
 
-    public PostStatusClientJpa(PostRepository postRepository) {
-        this.postRepository = postRepository;
+    public PostStatusClientJpa(IPostStatusUpdater postStatusUpdater) {
+        this.postStatusUpdater = postStatusUpdater;
     }
 
     @Override
-    @Transactional
     public void markReserved(Long postId) {
-        updateStatus(postId, PostStatus.RESERVED);
+        postStatusUpdater.reservePost(postId);
     }
 
     @Override
-    @Transactional
     public void markSold(Long postId) {
-        updateStatus(postId, PostStatus.SOLD);
+        postStatusUpdater.soldPost(postId);
     }
 
     @Override
-    @Transactional
     public void markSelling(Long postId) {
-        updateStatus(postId, PostStatus.SELLING);
-    }
-
-    private void updateStatus(Long postId, PostStatus status) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. postId=" + postId));
-        post.updateStatus(status);
+        postStatusUpdater.sellingPostAsCanceled(postId);
     }
 }

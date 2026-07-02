@@ -108,6 +108,7 @@ function DirectTransactionContent() {
     // 약속 확정 시: 거래 생성(PENDING) → 확정(AGREED)으로 상품을 예약중으로 변경 요청
     let transactionId: number;
     try {
+      console.log("거래입력");
       const createRes = await api.post<ApiResponse<{ id: number }>>('/api/v1/transactions', {
         postId: Number(postId),
         type: 'DIRECT',

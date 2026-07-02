@@ -44,10 +44,10 @@ public class TransactionController {
     ) {
         Long buyerId = requireUserId(userDetails);
         TransactionResponse response = transactionService.createTransaction(request, buyerId);
-        return ResponseEntity.ok(ApiResponse.ok("거래가 생성되었습니다.", response));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
-    // 거래 화면 표시용 상품(post) 정보 조회 (PostQueryClientJdbc로 posts 테이블 조회)
+    // 거래 화면 표시용 상품(post) 정보 조회 (PostQueryClientJdbc로 post 테이블 조회)
     @GetMapping("/post-info/{postId}")
     public ResponseEntity<ApiResponse<PostInfo>> getPostInfo(@PathVariable Long postId) {
         return ResponseEntity.ok(ApiResponse.ok(postQueryClient.getPostInfo(postId)));

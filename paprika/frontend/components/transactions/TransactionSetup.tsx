@@ -30,7 +30,7 @@ const CARD_FEE_RATE = 0.035;
  *
  * 라우트(/transactions?postId=)뿐 아니라 어디서든 <TransactionSetup postId="1" /> 로 끼워 쓸 수 있다.
  */
-export default function TransactionSetup({ title = '거래 방식 선택', postId: postIdProp, statusRedirectPath = '/mypage/buy' }: TransactionSetupProps) {
+export default function TransactionSetup({ title = '거래 방식 선택', postId: postIdProp, statusRedirectPath = '/mypage?tab=buy' }: TransactionSetupProps) {
   const searchParams = useSearchParams();
   const postId = postIdProp ?? searchParams.get('postId');
 
@@ -99,6 +99,7 @@ export default function TransactionSetup({ title = '거래 방식 선택', postI
     }
     //지금 서버 저장중이라고 알려주는 것
     setSubmitting(true);
+    console.log("postId: ", postId);
     try {
       await api.post('/api/v1/transactions', {
         postId: Number(postId),
@@ -116,7 +117,7 @@ export default function TransactionSetup({ title = '거래 방식 선택', postI
     } finally {
       setSubmitting(false);
     }
-  };
+   };
 
   if (!postId) {
     return <p className={styles.empty}>상품 정보가 없습니다. 상품 상세에서 거래하기를 눌러 주세요.</p>;

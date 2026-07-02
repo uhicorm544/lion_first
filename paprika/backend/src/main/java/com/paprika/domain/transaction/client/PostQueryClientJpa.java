@@ -29,6 +29,7 @@ public class PostQueryClientJpa implements PostQueryClient {
                 post.getId(),
                 post.getTitle(),
                 post.getCurrentPrice(),
-                post.getUserId());
+                post.getUserId(),
+                post.getPostStatus().name());
     }
 }
