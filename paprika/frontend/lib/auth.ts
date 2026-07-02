@@ -25,3 +25,10 @@ export const clearTokens = () => {
 export const isAuthenticated = (): boolean => {
   return !!getAccessToken();
 };
+
+export const withdraw = async (): Promise<void> => {
+  const { default: api } = await import('@/lib/api');
+  await api.delete('/api/v1/auth/withdraw');
+  clearTokens();
+  window.location.href = '/login';
+};

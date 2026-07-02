@@ -13,12 +13,17 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (password !== confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다.');
+      return;
+    }
     setLoading(true);
     try {
       await api.post('/api/v1/auth/signup', { email, nickname, password });
@@ -67,6 +72,17 @@ export default function RegisterPage() {
             minLength={8}
             style={{ padding: 14, borderRadius: 16, border: '1px solid var(--color-outline-variant)' }}
           />
+          <input
+            type="password"
+            placeholder="비밀번호 확인"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            style={{ padding: 14, borderRadius: 16, border: `1px solid ${confirmPassword && password !== confirmPassword ? 'var(--color-error)' : 'var(--color-outline-variant)'}` }}
+          />
+          {confirmPassword && password !== confirmPassword && (
+            <p style={{ color: 'var(--color-error)', fontSize: 14, margin: 0 }}>비밀번호가 일치하지 않습니다.</p>
+          )}
           {error && <p style={{ color: 'var(--color-error)', fontSize: 14, margin: 0 }}>{error}</p>}
           <button
             type="submit"

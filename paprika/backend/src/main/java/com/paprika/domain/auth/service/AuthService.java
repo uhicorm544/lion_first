@@ -1,10 +1,10 @@
 package com.paprika.domain.auth.service;
 
-import com.paprika.domain.auth.dto.AuthResponse;
-import com.paprika.domain.auth.dto.LoginRequest;
-import com.paprika.domain.auth.dto.SignupRequest;
+import com.paprika.domain.auth.dto.*;
+import com.paprika.domain.auth.entity.PasswordResetToken;
 import com.paprika.domain.auth.entity.RefreshToken;
 import com.paprika.domain.auth.entity.User;
+import com.paprika.domain.auth.repository.PasswordResetTokenRepository;
 import com.paprika.domain.auth.repository.RefreshTokenRepository;
 import com.paprika.domain.auth.repository.UserRepository;
 import com.paprika.global.exception.ErrorCode;
@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 @Service
@@ -25,8 +26,10 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final EmailService emailService;
 
     @Value("${jwt.refresh-token-expiry}")
     private long refreshTokenExpiry;
@@ -35,6 +38,9 @@ public class AuthService {
     public void signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new PaprikaException(ErrorCode.DUPLICATE_EMAIL);
+        }
+        if (userRepository.existsByNickname(request.getNickname())) {
+            throw new PaprikaException(ErrorCode.DUPLICATE_NICKNAME);
         }
         User user = User.builder()
                 .email(request.getEmail())
@@ -51,12 +57,16 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
 
+        if (!user.isActive()) {
+            throw new PaprikaException(ErrorCode.WITHDRAWN_ACCOUNT);
+        }
+
         if (user.getPassword() == null) {
             throw new PaprikaException(ErrorCode.OAUTH2_ACCOUNT);
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new PaprikaException(ErrorCode.UNAUTHORIZED);
+            throw new PaprikaException(ErrorCode.INVALID_PASSWORD);
         }
 
         return issueTokens(user);
@@ -91,6 +101,76 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
         return AuthResponse.UserInfo.from(user);
+    }
+
+    @Transactional
+    public void withdraw(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
+        user.deactivate();
+        refreshTokenRepository.deleteByUserId(userId);
+    }
+
+    @Transactional
+    public void sendPasswordResetCode(PasswordResetRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getPassword() == null) {
+            throw new PaprikaException(ErrorCode.OAUTH2_ACCOUNT);
+        }
+
+        passwordResetTokenRepository.deleteByUserId(user.getId());
+
+        String code = String.format("%06d", new SecureRandom().nextInt(1000000));
+        passwordResetTokenRepository.save(PasswordResetToken.builder()
+                .userId(user.getId())
+                .token(code)
+                .expiredAt(LocalDateTime.now().plusMinutes(5))
+                .build());
+
+        emailService.sendPasswordResetCode(request.getEmail(), code);
+    }
+
+    @Transactional
+    public void verifyResetCode(PasswordResetVerifyRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
+
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findTopByUserIdOrderByCreatedAtDesc(user.getId())
+                .orElseThrow(() -> new PaprikaException(ErrorCode.INVALID_RESET_CODE));
+
+        if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new PaprikaException(ErrorCode.EXPIRED_RESET_CODE);
+        }
+
+        if (!resetToken.getToken().equals(request.getCode())) {
+            throw new PaprikaException(ErrorCode.INVALID_RESET_CODE);
+        }
+    }
+
+    @Transactional
+    public void resetPassword(PasswordResetConfirmRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new PaprikaException(ErrorCode.USER_NOT_FOUND));
+
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findTopByUserIdOrderByCreatedAtDesc(user.getId())
+                .orElseThrow(() -> new PaprikaException(ErrorCode.INVALID_RESET_CODE));
+
+        if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new PaprikaException(ErrorCode.EXPIRED_RESET_CODE);
+        }
+
+        if (!resetToken.getToken().equals(request.getCode())) {
+            throw new PaprikaException(ErrorCode.INVALID_RESET_CODE);
+        }
+
+        user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
+        passwordResetTokenRepository.delete(resetToken);
     }
 
     private AuthResponse issueTokens(User user) {

@@ -67,6 +67,14 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
     public enum Role { USER, ADMIN }
     public enum Provider { LOCAL, GOOGLE, NAVER, GITHUB }
 

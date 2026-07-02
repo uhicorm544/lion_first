@@ -53,6 +53,9 @@ dependencies {
     // .env 파일 자동 로딩
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+    // Mail (A - 민동현)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     // Cloudinary (이미지 업로드)
     implementation 'com.cloudinary:cloudinary-http44:1.38.0'
 
