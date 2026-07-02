@@ -3,6 +3,7 @@ package com.paprika.domain.mypage.service;
 import com.paprika.domain.mypage.dto.MannerTemperatureResponse;
 import com.paprika.domain.mypage.dto.ReviewCreateRequest;
 import com.paprika.domain.mypage.dto.ReviewResponse;
+import com.paprika.domain.mypage.dto.ReviewUpdateRequest;
 import com.paprika.domain.mypage.entity.MannerTemperature;
 import com.paprika.domain.mypage.entity.MyPageUser;
 import com.paprika.domain.mypage.entity.Review;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -78,8 +80,62 @@ public class ReviewService {
         return ReviewResponse.from(review, reviewerNickname);
     }
 
+    public ReviewResponse updateReview(Long reviewerId, Long reviewId, ReviewUpdateRequest request) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.REVIEW_NOT_FOUND));
+
+        if (!review.getReviewerId().equals(reviewerId)) {
+            throw new PaprikaException(ErrorCode.REVIEW_ACCESS_DENIED);
+        }
+
+        int oldScore = review.getMannerScore();
+        int newScore = calcMannerScore(request.getRating());
+
+        review.update(request.getRating(), newScore, request.getContent());
+
+        MannerTemperature mt = mannerTemperatureRepository.findByUserId(review.getRevieweeId())
+                .orElse(MannerTemperature.defaultFor(review.getRevieweeId()));
+        mt.adjustScore(newScore - oldScore);
+        mannerTemperatureRepository.save(mt);
+
+        String reviewerNickname = myPageUserRepository.findById(reviewerId)
+                .map(MyPageUser::getNickname)
+                .orElse(null);
+
+        return ReviewResponse.from(review, reviewerNickname);
+    }
+
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getReviewsByUserId(Long userId) {
+    public ReviewResponse getReview(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.REVIEW_NOT_FOUND));
+
+        String reviewerNickname = myPageUserRepository.findById(review.getReviewerId())
+                .map(MyPageUser::getNickname)
+                .orElse(null);
+
+        return ReviewResponse.from(review, reviewerNickname);
+    }
+
+    public void deleteReview(Long reviewerId, Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.REVIEW_NOT_FOUND));
+
+        if (!review.getReviewerId().equals(reviewerId)) {
+            throw new PaprikaException(ErrorCode.REVIEW_ACCESS_DENIED);
+        }
+
+        mannerTemperatureRepository.findByUserId(review.getRevieweeId())
+                .ifPresent(mt -> {
+                    mt.revertScore(review.getMannerScore());
+                    mannerTemperatureRepository.save(mt);
+                });
+
+        reviewRepository.delete(review);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getReviewsByUserId(Long userId, int page, int size) {
         List<Review> reviews = reviewRepository.findByRevieweeIdOrderByCreatedAtDesc(userId);
 
         List<Long> reviewerIds = reviews.stream()
@@ -91,9 +147,20 @@ public class ReviewService {
                 .stream()
                 .collect(Collectors.toMap(MyPageUser::getId, MyPageUser::getNickname));
 
-        return reviews.stream()
+        List<ReviewResponse> all = reviews.stream()
                 .map(review -> ReviewResponse.from(review, nicknameByReviewerId.get(review.getReviewerId())))
                 .collect(Collectors.toList());
+        int fromIndex = Math.min(page * size, all.size());
+        int toIndex = Math.min(fromIndex + size, all.size());
+        List<ReviewResponse> content = all.subList(fromIndex, toIndex);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", content);
+        result.put("totalElements", all.size());
+        result.put("totalPages", size == 0 ? 0 : (int) Math.ceil((double) all.size() / size));
+        result.put("number", page);
+        result.put("size", size);
+        return result;
     }
 
     private int calcMannerScore(int rating) {

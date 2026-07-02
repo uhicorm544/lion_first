@@ -2,8 +2,6 @@ package com.paprika.domain.mypage.controller;
 
 import com.paprika.domain.mypage.dto.ProfileResponse;
 import com.paprika.domain.mypage.dto.ProfileUpdateRequest;
-import com.paprika.domain.mypage.dto.TransactionSummaryResponse;
-import com.paprika.domain.mypage.dto.WishListResponse;
 import com.paprika.domain.mypage.service.MyPageService;
 import com.paprika.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
-import java.util.List;
 
 /**
  * 마이페이지 컨트롤러
@@ -21,6 +18,7 @@ import java.util.List;
  * - PATCH  /api/v1/users/me              프로필 수정
  * - GET    /api/v1/users/me/products     나의 판매 상품 목록 (판매중/예약중/완료)
  * - GET    /api/v1/users/me/wishlist     관심 상품(찜) 목록
+ * - GET    /api/v1/users/me/wishlist/{productId}    찜 여부 확인
  * - POST   /api/v1/users/me/wishlist/{productId}    찜 추가
  * - DELETE /api/v1/users/me/wishlist/{productId}    찜 취소
  * - GET    /api/v1/users/{id}/reviews    유저 리뷰 목록 (매너 온도)
@@ -78,19 +76,31 @@ public class MyPageController {
      * tab: all | buy | sell | selling
      */
     @GetMapping("/me/transactions")
-    public ResponseEntity<ApiResponse<List<TransactionSummaryResponse>>> getMyTransactions(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyTransactions(
             @RequestParam(defaultValue = "all") String tab,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(ApiResponse.ok(myPageService.getMyTransactions(userId, tab)));
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getMyTransactions(userId, tab, page, size)));
     }
-
+    //찜목록조회
     @GetMapping("/me/wishlist")
-    public ResponseEntity<ApiResponse<List<WishListResponse>>> getMyWishList(Authentication authentication) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyWishList(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Authentication authentication){
         Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(ApiResponse.ok(myPageService.getMyWishList(userId)));
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getMyWishList(userId, page, size)));
     }
-
+    //찜 여부 확인
+    @GetMapping("/me/wishlist/{productId}")
+    public ResponseEntity<ApiResponse<Boolean>> isWished(
+            @PathVariable Long productId, Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.isWished(userId, productId)));
+    }
+    //찜 추가
     @PostMapping("/me/wishlist/{productId}")
     public ResponseEntity<ApiResponse<Void>> addWishList(
             @PathVariable Long productId, Authentication authentication) {
@@ -98,7 +108,7 @@ public class MyPageController {
         myPageService.addWishList(userId, productId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
-
+    //찜 삭제
     @DeleteMapping("/me/wishlist/{productId}")
     public ResponseEntity<ApiResponse<Void>> removeWishList(
             @PathVariable Long productId, Authentication authentication) {

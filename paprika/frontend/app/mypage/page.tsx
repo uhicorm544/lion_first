@@ -71,13 +71,13 @@ export default function MyPage() {
 
   useEffect(() => {
     api.get(`/api/v1/users/me/transactions?tab=${activeOrderTab}`)
-      .then((res) => setTransactions(res.data.data))
+      .then((res) => setTransactions(res.data.data.content))
       .catch(() => setTransactions([]));
   }, [activeOrderTab]);
 
   useEffect(() => {
     api.get('/api/v1/users/me/wishlist')
-      .then((res) => setWishlistItems(res.data.data))
+      .then((res) => setWishlistItems(res.data.data.content))
       .catch(() => setWishlistItems([]));
   }, []);
 
@@ -152,7 +152,7 @@ export default function MyPage() {
               <div key={item.id} className={styles.transactionCard}>
                 <img src={item.imgUrl} alt="상품" className={styles.transactionImg} />
                 <div className={styles.transactionInfo}>
-                  <p className={styles.transactionTitle}>상품 #{item.productId}</p>
+                  <p className={styles.transactionTitle}>{item.title}</p>
                 </div>
               </div>
             ))}

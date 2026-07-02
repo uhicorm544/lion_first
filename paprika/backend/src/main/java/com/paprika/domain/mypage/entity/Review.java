@@ -54,4 +54,10 @@ public class Review {
         r.content = content;
         return r;
     }
+
+    public void update(Integer rating, Integer mannerScore, String content) {
+        this.rating = rating;
+        this.mannerScore = mannerScore;
+        this.content = content;
+    }
 }

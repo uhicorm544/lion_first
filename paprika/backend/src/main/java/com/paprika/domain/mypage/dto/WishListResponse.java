@@ -10,13 +10,15 @@ import java.time.LocalDateTime;
 public class WishListResponse {
     private Long id;
     private Long productId;
+    private String title;
     private String imgUrl;
     private LocalDateTime createdAt;
 
-    public static WishListResponse from(WishList w, String imgUrl) {
+    public static WishListResponse from(WishList w, String title, String imgUrl) {
         return WishListResponse.builder()
                 .id(w.getId())
                 .productId(w.getProductId())
+                .title(title)
                 .imgUrl(imgUrl)
                 .createdAt(w.getCreatedAt())
                 .build();

@@ -42,10 +42,29 @@ public class MannerTemperature {
     }
 
     public void applyScore(int mannerScore) {
-        this.temperature = Math.max(1, Math.min(100, this.temperature + mannerScore));
+        this.temperature = clamp(this.temperature + mannerScore);
         this.reviewCount++;
         this.trustGrade = calcGrade(this.temperature);
         this.lastUpdated = LocalDateTime.now();
+    }
+
+    /** 리뷰 수정 시 사용: reviewCount는 그대로 두고 온도 차이(delta)만 반영 */
+    public void adjustScore(int delta) {
+        this.temperature = clamp(this.temperature + delta);
+        this.trustGrade = calcGrade(this.temperature);
+        this.lastUpdated = LocalDateTime.now();
+    }
+
+    /** 리뷰 삭제 시 사용: 기존 점수 되돌리고 reviewCount -1 */
+    public void revertScore(int mannerScore) {
+        this.temperature = clamp(this.temperature - mannerScore);
+        this.reviewCount = Math.max(0, this.reviewCount - 1);
+        this.trustGrade = calcGrade(this.temperature);
+        this.lastUpdated = LocalDateTime.now();
+    }
+
+    private int clamp(int temp) {
+        return Math.max(1, Math.min(100, temp));
     }
 
     private String calcGrade(int temp) {

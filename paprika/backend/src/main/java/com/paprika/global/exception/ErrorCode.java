@@ -32,6 +32,8 @@ public enum ErrorCode {
     // Review (E - 장인호)
     REVIEW_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 리뷰를 작성했습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "유효하지 않은 별점입니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."),
+    REVIEW_ACCESS_DENIED(HttpStatus.FORBIDDEN, "리뷰에 대한 권한이 없습니다."),
 
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "잘못된 입력값입니다."),

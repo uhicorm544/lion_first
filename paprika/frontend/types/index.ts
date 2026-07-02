@@ -116,11 +116,13 @@ export interface MyPageTransaction {
   amount: number;
   createdAt: string;
   imgUrl: string;
+  reviewId: number | null;
 }
 // Wishlist
 export interface WishListItem {
   id: number;
   productId: number;
+  title: string;
   imgUrl: string;
   createdAt: string;
 }

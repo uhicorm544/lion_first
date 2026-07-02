@@ -33,6 +33,14 @@
 .cardPrice { font-weight: 700; margin-bottom: 4px; }
 .cardStatus { font-size: 13px; color: var(--color-secondary); }
 
+.actionSlot {
+  min-height: 33px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .wishBtn {
   padding: 6px 12px;
   border-radius: 8px;

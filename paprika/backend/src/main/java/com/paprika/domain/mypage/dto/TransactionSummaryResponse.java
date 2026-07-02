@@ -29,8 +29,9 @@ public class TransactionSummaryResponse {
     private BigDecimal amount;
     private LocalDateTime createdAt;
     private String imgUrl;
+    private Long reviewId; // 작성한 리뷰 id (없으면 null = 아직 리뷰 안 씀, 구매 완료 건에만 의미 있음)
 
-    public static TransactionSummaryResponse from(Transaction t, String myRole, String imgUrl) {
+    public static TransactionSummaryResponse from(Transaction t, String myRole, String imgUrl, Long reviewId) {
         return TransactionSummaryResponse.builder()
                 .id(t.getId())
                 .postId(t.getPostId())
@@ -41,6 +42,7 @@ public class TransactionSummaryResponse {
                 .amount(t.getAmount())
                 .createdAt(t.getCreatedAt())
                 .imgUrl(imgUrl)
+                .reviewId(reviewId)
                 .build();
     }
 }
