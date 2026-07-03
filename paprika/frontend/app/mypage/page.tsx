@@ -216,8 +216,7 @@ function MyPageContent() {
     if (t.status === 'PENDING' || t.status === 'AGREED') {
       return (
         <div className={styles.actionButtons}>
-          {/* 거래 확정(COMPLETED 전환)은 구매자만 — 판매자가 임의로 완료 처리하면 구매자가 취소할 수단이 없어짐 */}
-          {t.myRole === 'BUYER' && (
+          {t.myRole === 'SELLER' && (
             <ConfirmTransactionButton
               transactionId={t.id}
               className={styles.confirmTransactionBtn}
