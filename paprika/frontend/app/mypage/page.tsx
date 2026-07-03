@@ -39,6 +39,8 @@ const orderEmptyMessages: Record<OrderTab, string> = {
 };
 
 const statusLabels: Record<string, string> = {
+  SELLING: '판매중', // 거래 전, 상품만 등록된 상태
+  RESERVED: '예약중', // 거래 전이지만 상품 상태만 예약중인 경우 (방어적으로 표시)
   PENDING: '예약중',
   AGREED: '예약중',
   COMPLETED: '거래 완료',
@@ -98,7 +100,7 @@ function MyPageContent() {
     setPage(0);
   }, [activeOrderTab]);
 
-  useEffect(() => {
+  const fetchTransactions = () => {
     api.get(`/api/v1/users/me/transactions?tab=${activeOrderTab}&page=${page}&size=${PAGE_SIZE}`)
       .then((res) => {
         const fetchedTotalPages = res.data.data.totalPages;
@@ -110,6 +112,10 @@ function MyPageContent() {
         setTotalPages(fetchedTotalPages);
       })
       .catch(() => setTransactions([]));
+  };
+
+  useEffect(() => {
+    fetchTransactions();
   }, [activeOrderTab, page]);
 
   const fetchWishlist = () => {
@@ -203,34 +209,33 @@ function MyPageContent() {
       return t.reviewId ? (
         <div className={styles.reviewedRow}>
           <span className={styles.reviewedBadge}>작성완료</span>
-          <button className={styles.editBtn} onClick={() => openEditModal(t.id, t.reviewId!)}>
+          <button className={styles.editBtn} onClick={() => openEditModal(t.id!, t.reviewId!)}>
             수정
           </button>
         </div>
       ) : (
-        <button className={styles.reviewBtn} onClick={() => openCreateModal(t.id)}>
+        <button className={styles.reviewBtn} onClick={() => openCreateModal(t.id!)}>
           리뷰 작성
         </button>
       );
     }
-    if (t.status === 'PENDING' || t.status === 'AGREED') {
+    // 판매중 탭에서 아직 거래가 안 생긴 상품(t.id === null)은 확정/취소할 대상이 없으므로 버튼 없음
+    if (t.id != null && (t.status === 'PENDING' || t.status === 'AGREED')) {
       return (
         <div className={styles.actionButtons}>
           {t.myRole === 'SELLER' && (
             <ConfirmTransactionButton
               transactionId={t.id}
               className={styles.confirmTransactionBtn}
-              onConfirmed={(confirmedId) =>
-                setTransactions((prev) => prev.filter((tx) => tx.id !== confirmedId))
-              }
+              // 판매중 탭은 상품(SELLING/RESERVED) 기준으로도 다시 채워질 수 있어서(취소 시 상품이
+              // 거래 없는 상태로 되돌아옴) 로컬에서 배열만 지우지 않고 서버에서 다시 조회한다.
+              onConfirmed={() => fetchTransactions()}
             />
           )}
           <CancelTransactionButton
             transactionId={t.id}
             className={styles.cancelTransactionBtn}
-            deleteHandler={(cancelledId) =>
-              setTransactions((prev) => prev.filter((tx) => tx.id !== cancelledId))
-            }
+            deleteHandler={() => fetchTransactions()}
           />
         </div>
       );
@@ -278,17 +283,18 @@ function MyPageContent() {
           <>
             <div className={styles.list}>
               {transactions.map((t) => (
-                <div key={t.id} className={styles.card}>
+                <div key={t.id ?? `post-${t.postId}`} className={styles.card}>
                   <img src={t.imgUrl} alt="상품" className={styles.cardImg} />
                   <div className={styles.cardInfo}>
                     <p className={styles.cardTitle}>
                       <Link href={`/products/${t.postId}`} className={styles.cardTitleLink}>
                         상품 #{t.postId}
                       </Link>
-                      {' '}(거래 #{t.id})
+                      {t.id != null && <>{' '}(거래 #{t.id})</>}
                     </p>
                     <p className={styles.cardType}>
-                      {t.type === 'DIRECT' ? '직거래' : '택배'} · {t.myRole === 'BUYER' ? '구매' : '판매'}
+                      {t.type ? `${t.type === 'DIRECT' ? '직거래' : '택배'} · ` : ''}
+                      {t.myRole === 'BUYER' ? '구매' : '판매'}
                     </p>
                   </div>
                   <div className={styles.cardRight}>

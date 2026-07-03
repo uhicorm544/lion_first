@@ -162,16 +162,28 @@ public class MyPageService {
                     })
                     .collect(Collectors.toList());
 
-            case "selling" -> transactionRepository
-                    .findBySellerIdOrderByCreatedAtDesc(userId)
-                    .stream()
-                    .filter(t -> t.getStatus() == TransactionStatus.PENDING
-                              || t.getStatus() == TransactionStatus.AGREED)
-                    .map(t -> {
-                        String imgUrl = resolveImgUrl(t.getPostId());
-                        return TransactionSummaryResponse.from(t, "SELLER", imgUrl, null);
-                    })
-                    .collect(Collectors.toList());
+            // 판매중 탭: 거래 여부와 무관하게 "내 상품(SELLING/RESERVED)"을 기준으로 보여준다.
+            // 상품에 진행중인 거래(AGREED)가 있으면 그 거래 정보를, 없으면 상품 정보만으로 항목을 만든다.
+            case "selling" -> {
+                List<MyPagePost> sellingPosts = myPagePostRepository
+                        .findByUserIdAndPostStatusInOrderByCreatedAtDesc(userId, List.of("SELLING", "RESERVED"));
+
+                Map<Long, Transaction> agreedTxByPostId = transactionRepository
+                        .findBySellerIdOrderByCreatedAtDesc(userId)
+                        .stream()
+                        .filter(t -> t.getStatus() == TransactionStatus.AGREED)
+                        .collect(Collectors.toMap(Transaction::getPostId, t -> t, (a, b) -> a));
+
+                yield sellingPosts.stream()
+                        .map(post -> {
+                            String imgUrl = resolveImgUrl(post.getId());
+                            Transaction tx = agreedTxByPostId.get(post.getId());
+                            return tx != null
+                                    ? TransactionSummaryResponse.from(tx, "SELLER", imgUrl, null)
+                                    : TransactionSummaryResponse.fromPostOnly(post, imgUrl);
+                        })
+                        .collect(Collectors.toList());
+            }
 
             case "cancelled" -> {
                 List<TransactionSummaryResponse> cancelled = new ArrayList<>();
@@ -213,12 +225,12 @@ public class MyPageService {
 
     }
 
-    /** 상품 썸네일 조회, 없으면(더미데이터 등) postId 시드로 placeholder 이미지 반환 */
+    /** 상품 썸네일 조회, 없으면 상품 상세/홈에서 쓰는 것과 동일한 기본 이미지 반환 */
     private String resolveImgUrl(Long postId) {
         return myPagePostImageRepository
                 .findFirstByPostIdAndActiveTrue(postId)
                 .map(MyPagePostImage::getImgUrl)
-                .orElse("https://picsum.photos/seed/post" + postId + "/320/320");//상품사진이 없을떄 기본이미지 나중에변경
+                .orElse("/images/product-placeholder.svg");
     }
 
     /** 구매완료 건에 한해, 내가 이미 쓴 리뷰가 있으면 그 id를 반환 (없으면 null) */
@@ -238,7 +250,7 @@ public class MyPageService {
                     String imgUrl = myPagePostImageRepository
                             .findFirstByPostIdAndActiveTrue(w.getProductId())
                             .map(MyPagePostImage::getImgUrl)
-                            .orElse("https://picsum.photos/seed/product" + w.getProductId() + "/320/320");//상품사진이 없을떄 기본이미지 나중에변경
+                            .orElse("/images/product-placeholder.svg");
                     String title = myPagePostRepository.findById(w.getProductId())
                             .map(MyPagePost::getTitle)
                             .orElse("삭제된 상품");

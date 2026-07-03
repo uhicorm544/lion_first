@@ -1,11 +1,13 @@
 package com.paprika.domain.mypage.dto;
 
+import com.paprika.domain.mypage.entity.MyPagePost;
 import com.paprika.domain.transaction.entity.Transaction;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * 마이페이지 거래 내역 목록 응답 DTO
@@ -45,6 +47,26 @@ public class TransactionSummaryResponse {
                 .imgUrl(imgUrl)
                 .reviewId(reviewId)
                 .cancelledBy(t.getCancelledBy() != null ? t.getCancelledBy().name() : null)
+                .build();
+    }
+
+    /**
+     * 아직 거래(Transaction)가 생성되지 않은, 상품 등록 상태 그대로인 판매중 항목용.
+     * id/type/reviewId/cancelledBy는 거래가 없으므로 전부 null, status는 상품(post)의 상태를 그대로 노출.
+     */
+    public static TransactionSummaryResponse fromPostOnly(MyPagePost post, String imgUrl) {
+        return TransactionSummaryResponse.builder()
+                .id(null)
+                .postId(post.getId())
+                .type(null)
+                .status(post.getPostStatus())
+                .myRole("SELLER")
+                .itemPrice(post.getCurrentPrice())
+                .amount(post.getCurrentPrice())
+                .createdAt(LocalDateTime.ofInstant(post.getCreatedAt(), ZoneId.systemDefault()))
+                .imgUrl(imgUrl)
+                .reviewId(null)
+                .cancelledBy(null)
                 .build();
     }
 }

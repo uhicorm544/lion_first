@@ -110,9 +110,9 @@ export interface PostInfo {
 
 // MyPage (E - 장인호)
 export interface MyPageTransaction {
-  id: number;
+  id: number | null; // 판매중 탭에서 아직 거래가 생성되지 않은 상품만 있는 항목은 null
   postId: number;
-  type: string;
+  type: string | null;
   status: string;
   myRole: 'BUYER' | 'SELLER';
   itemPrice: number;
