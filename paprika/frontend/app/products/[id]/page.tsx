@@ -77,7 +77,9 @@ export default async function ProductDetailPage({
 								<img src="/images/avatar-placeholder.svg" alt="seller" />
 							</div>
 							<div>
-								<p className={styles.sellerName}>판매자 #{product.userId}</p>
+								<p className={styles.sellerName}>
+									{product.nickname} 님 #{product.userId}
+								</p>
 								<p className={styles.sellerSub}>Trusted seller</p>
 							</div>
 						</div>
@@ -92,7 +94,9 @@ export default async function ProductDetailPage({
 							관심 등록
 						</button>
 						<ChatButton postId={product.id} />
-						{product.postStatus === 'SELLING' && <TradeButton postId={product.id} />}
+						{product.postStatus === "SELLING" && (
+							<TradeButton postId={product.id} />
+						)}
 					</div>
 				</div>
 			</section>

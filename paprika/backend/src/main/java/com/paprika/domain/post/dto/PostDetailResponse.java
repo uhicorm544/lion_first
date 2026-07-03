@@ -15,6 +15,7 @@ import lombok.Builder;
 public record PostDetailResponse(
         Long id,
         Long userId,
+        String nickname,
         String title,
         String content,
         double latitude,
@@ -26,10 +27,11 @@ public record PostDetailResponse(
         int viewCount,
         Instant createdAt,
         List<String> imgUrls) {
-    public static PostDetailResponse from(Post post, List<PostImage> PostImages) {
+    public static PostDetailResponse from(Post post, List<PostImage> PostImages, String nickname) {
         return PostDetailResponse.builder()
                 .id(post.getId())
                 .userId(post.getUserId())
+                .nickname(nickname)
                 .title(post.getTitle())
                 .content(post.getContent())
                 .latitude(post.getLatitude())

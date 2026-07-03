@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.paprika.domain.auth.entity.User;
+import com.paprika.domain.auth.repository.UserRepository;
 import com.paprika.domain.post.dto.PostCreateRequest;
 import com.paprika.domain.post.dto.PostDetailResponse;
 import com.paprika.domain.post.dto.PostResponse;
@@ -42,6 +44,7 @@ public class PostService implements IPostStatusUpdater {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final PostPriceHistoryRepository postPriceHistoryRepository;
+    private final UserRepository userRepository;
 
     // 단건 조회
     // (As-is - 07/02) 현재 쿼리 두 번 나가는 구조임
@@ -50,7 +53,9 @@ public class PostService implements IPostStatusUpdater {
         Post post = postRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found with id: " + id));
         List<PostImage> postImages = postImageRepository.findByPost_IdAndActiveTrue(id);
-        return PostDetailResponse.from(post, postImages);
+        User user = userRepository.findById(post.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + post.getUserId()));
+        return PostDetailResponse.from(post, postImages, user.getNickname());
     }
 
     // 전체 or 카테고리별 조회
@@ -66,16 +71,19 @@ public class PostService implements IPostStatusUpdater {
     // PostCreateRequest에서 category를 null로 두고, Post에서 category를 null로 두면 된다.
     @Transactional
     public Long createPost(Long userId, PostCreateRequest request) {
+        String thumbnailUrl = (request.imgUrls() != null && !request.imgUrls().isEmpty())
+                ? request.imgUrls().get(0)
+                : null;
+
         Post post = Post.builder()
                 .userId(userId)
                 .title(request.title())
                 .content(request.content())
-                // .latitude(request.latitude())
-                // .longitude(request.longitude())
-                // .thumbnailUrl(request.thumbnailUrl())
+                .latitude(request.latitude())
+                .longitude(request.longitude())
                 .currentPrice(request.price())
-                // .active(true)
-                // .category(request.category())
+                .thumbnailUrl(thumbnailUrl)
+                .category(request.category())
                 .build();
         postRepository.save(post);
 
@@ -112,7 +120,7 @@ public class PostService implements IPostStatusUpdater {
         List<PostImage> existingImages = postImageRepository.findByPost_IdAndActiveTrue(postId);
         existingImages.forEach(PostImage::softDeleteSchedule);
 
-        if (request.imgUrls() != null) {
+        if (request.imgUrls() != null && !request.imgUrls().isEmpty()) {
             List<PostImage> newImages = request.imgUrls().stream()
                     .map(imgUrl -> PostImage.builder()
                             .post(post)
@@ -120,6 +128,9 @@ public class PostService implements IPostStatusUpdater {
                             .build())
                     .toList();
             postImageRepository.saveAll(newImages);
+            post.updateThumbnailUrl(request.imgUrls().get(0));
+        } else {
+            post.updateThumbnailUrl(null);
         }
 
         return post.getId();
@@ -139,6 +150,12 @@ public class PostService implements IPostStatusUpdater {
 
         List<PostImage> existingImages = postImageRepository.findByPost_IdAndActiveTrue(postId);
         existingImages.forEach(PostImage::softDeleteSchedule);
+    }
+
+    // TODO : search 임시
+    public Page<PostResponse> searchPosts(String keyword, Pageable pageable) {
+        Page<Post> posts = postRepository.searchPostsByKeyword(keyword, pageable);
+        return posts.map(PostResponse::from);
     }
 
     @Override

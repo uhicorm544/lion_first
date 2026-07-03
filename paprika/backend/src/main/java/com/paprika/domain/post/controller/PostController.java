@@ -69,10 +69,10 @@ public class PostController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Object>> searchPosts(
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> searchPosts(
             @RequestParam String keyword,
             @PageableDefault(size = 20) Pageable pageable) {
         // TODO: 복합 검색 구현
-        return ResponseEntity.ok(ApiResponse.ok(null));
+        return ResponseEntity.ok(ApiResponse.ok(postService.searchPosts(keyword, pageable)));
     }
 }
