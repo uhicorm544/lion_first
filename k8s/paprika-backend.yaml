@@ -19,7 +19,7 @@ spec:
         kubernetes.io/hostname: asus-vm200
       containers:
         - name: paprika-backend
-          image: ghcr.io/hyun326/lion_first-backend:8fc554923c4a4dfa1276d43ec407b51329764758
+          image: ghcr.io/hyun326/lion_first-backend:d08051902c0f3487297687dde37133fc8258f22d
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
