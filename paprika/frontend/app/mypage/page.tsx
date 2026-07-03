@@ -14,6 +14,7 @@ import styles from './page.module.css';
 import MannerTemperature from '@/components/mypage/MannerTemperature';
 import Pagination from '@/components/mypage/Pagination';
 import CancelTransactionButton from '@/components/transactions/CancelTransactionButton';
+import ConfirmTransactionButton from '@/components/transactions/ConfirmTransactionButton';
 
 const PAGE_SIZE = 10;
 
@@ -75,7 +76,6 @@ function MyPageContent() {
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
-  const [confirmingId, setConfirmingId] = useState<number | null>(null);
 
   useEffect(() => {
     api.get('/api/v1/users/me')
@@ -191,20 +191,6 @@ function MyPageContent() {
     }
   };
 
-  const handleConfirmTransaction = async (transactionId: number) => {
-    if (!confirm('거래를 완료 처리하시겠어요?')) return;
-    setConfirmingId(transactionId);
-    try {
-      // 거래 도메인(D) 기존 엔드포인트: COMPLETED 전환 + 상품 SOLD 처리까지 같이 해줌
-      await api.post(`/api/v1/transactions/${transactionId}/complete`);
-      setTransactions((prev) => prev.filter((tx) => tx.id !== transactionId));
-    } catch {
-      alert('거래 완료 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-    } finally {
-      setConfirmingId(null);
-    }
-  };
-
   const renderStatus = (t: MyPageTransaction) => {
     if (t.status === 'CANCELLED') {
       return t.cancelledBy ? cancelledByLabels[t.cancelledBy] : statusLabels.CANCELLED;
@@ -232,14 +218,13 @@ function MyPageContent() {
         <div className={styles.actionButtons}>
           {/* 거래 확정(COMPLETED 전환)은 구매자만 — 판매자가 임의로 완료 처리하면 구매자가 취소할 수단이 없어짐 */}
           {t.myRole === 'BUYER' && (
-            <button
-              type="button"
+            <ConfirmTransactionButton
+              transactionId={t.id}
               className={styles.confirmTransactionBtn}
-              disabled={confirmingId === t.id}
-              onClick={() => handleConfirmTransaction(t.id)}
-            >
-              {confirmingId === t.id ? '처리 중...' : '거래 확정'}
-            </button>
+              onConfirmed={(confirmedId) =>
+                setTransactions((prev) => prev.filter((tx) => tx.id !== confirmedId))
+              }
+            />
           )}
           <CancelTransactionButton
             transactionId={t.id}
