@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -30,7 +30,7 @@ const CATEGORIES = [
   { value: 'OTHERS', label: '기타', icon: 'more_horiz' },
 ];
 
-export default function ProductsPage() {
+function ProductsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [category, setCategory] = useState(() => searchParams.get('category') ?? '');
@@ -161,5 +161,14 @@ export default function ProductsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+// useSearchParams()는 Suspense 경계 안에서만 정적 빌드가 통과된다.
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsPageInner />
+    </Suspense>
   );
 }

@@ -10,6 +10,33 @@
   background: var(--color-surface-container-lowest, #fff);
 }
 
+/* 상품 정보 헤더 (닫기와 채팅창 사이 참고 표시) */
+.room > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-lowest, #fff);
+}
+
+.room > header strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room > header span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
 /* 메시지 영역 (스크롤) */
 .room > div {
   height: 440px;
@@ -18,6 +45,49 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* 메시지 위 발신자 닉네임 (상대는 왼쪽) */
+.room > div span[data-sender] {
+  align-self: flex-start;
+  margin: 2px 4px -2px;
+  font-size: 11px;
+  color: var(--color-on-surface-variant);
+}
+
+/* 내 메시지 위 닉네임 (오른쪽) */
+.room > div span[data-sender][data-mine] {
+  align-self: flex-end;
+}
+
+/* 날짜 구분선 (가운데 라벨 + 양옆 선) */
+.room > div div[data-datesep] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 4px 4px;
+  color: var(--color-on-surface-variant);
+  font-size: 11px;
+}
+
+.room > div div[data-datesep]::before,
+.room > div div[data-datesep]::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-outline-variant);
+}
+
+/* 발송 시각 (말풍선 아래 작게, 정렬은 말풍선과 동일) */
+.room > div span[data-time] {
+  align-self: flex-start;
+  margin: -1px 4px 2px;
+  font-size: 10px;
+  color: var(--color-on-surface-variant);
+}
+
+.room > div span[data-time][data-mine] {
+  align-self: flex-end;
 }
 
 /* 말풍선 — 상대 메시지 (왼쪽, 따뜻한 라이트그레이) */

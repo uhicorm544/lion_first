@@ -75,18 +75,15 @@ public class ChatController {
             @RequestBody ChatRoomCreateRequest request
     ) {
         Long me = getCurrentUserId();
-        List<ChatRoomResponse> rooms = chatService
-                .enterChatRooms(request.getPostId(), me)
-                .stream()
-                .map(ChatRoomResponse::from)
-                .toList();
+        List<ChatRoomResponse> rooms = chatService.enterChatRooms(request.getPostId(), me);
         return ResponseEntity.ok(ApiResponse.ok(rooms));
     }
 
+    /** 내 채팅방 목록 (구매자·판매자 모두 포함, 최신순). 프론트가 역할별로 분류한다. */
     @GetMapping("/rooms")
-    public ResponseEntity<ApiResponse<Object>> getChatRooms() {
-        // TODO: 내 채팅방 목록 구현
-        return ResponseEntity.ok(ApiResponse.ok(null));
+    public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getChatRooms() {
+        Long me = getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.ok(chatService.getMyChatRooms(me)));
     }
 
     @GetMapping("/rooms/{roomId}")
@@ -107,6 +104,8 @@ public class ChatController {
                 .stream()
                 .map(ChatMessageResponse::from)
                 .toList();
+        // 방을 열었으니 이 방을 읽음 처리 (뱃지 감소)
+        chatService.markRead(roomId, me);
         return ResponseEntity.ok(ApiResponse.ok(messages));
     }
 

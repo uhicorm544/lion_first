@@ -1,12 +1,12 @@
 /* 메인 '채팅하기' 버튼 */
 .trigger {
-  padding: 10px 16px;
+  padding: 16px 20px;
   border: none;
   border-radius: 18px;
   background: var(--color-primary);
   color: var(--color-on-primary);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
 }
 

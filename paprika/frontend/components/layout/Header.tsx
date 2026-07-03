@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnread } from "@/contexts/UnreadContext";
 import styles from "./Header.module.css";
 
 export default function Header() {
 	const { user, loading, logout } = useAuth();
+	const { total } = useUnread();
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +47,32 @@ export default function Header() {
 
 				<nav className={styles.nav}>
 					<Link href="/products">Categories</Link>
-					<Link href="/chat">Chat</Link>
+					<Link
+							href="/chat"
+							style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+						>
+							Chat
+							{total > 0 && (
+								<span
+									style={{
+										minWidth: 20,
+										height: 20,
+										padding: "0 6px",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+										borderRadius: 10,
+										background: "var(--color-error, #e5484d)",
+										color: "#fff",
+										fontSize: 11,
+										fontWeight: 700,
+										lineHeight: 1,
+									}}
+								>
+									{total > 99 ? "99+" : total}
+								</span>
+							)}
+						</Link>
 					<Link href="/mypage">My Page</Link>
 				</nav>
 

@@ -19,14 +19,14 @@ interface ChatButtonProps {
 }
 
 export default function ChatButton({ postId }: ChatButtonProps) {
-  const [roomId, setRoomId] = useState<number | null>(null);     // 열린 방
+  const [room, setRoom] = useState<RoomSummary | null>(null);     // 열린 방
   const [rooms, setRooms] = useState<RoomSummary[] | null>(null); // 방 목록(N개일 때)
 
-  const isOpen = roomId !== null || rooms !== null;
+  const isOpen = room !== null || rooms !== null;
 
   // 방/목록 전체 닫기 (모달 닫기)
   const closeAll = () => {
-    setRoomId(null);
+    setRoom(null);
     setRooms(null);
   };
 
@@ -37,7 +37,7 @@ export default function ChatButton({ postId }: ChatButtonProps) {
       const list: RoomSummary[] = res.data.data ?? [];
 
       if (list.length === 1) {
-        setRoomId(list[0].id); // 1개면 목록 안 거치고 바로 열기
+        setRoom(list[0]); // 1개면 목록 안 거치고 바로 열기
       } else if (list.length === 0) {
         alert('아직 대화가 없습니다.');
       } else {
@@ -77,8 +77,8 @@ export default function ChatButton({ postId }: ChatButtonProps) {
           >
             <div className={styles.dialogHeader}>
               {/* 목록에서 들어온 경우 '목록으로' 뒤로가기 제공 */}
-              {roomId !== null && rooms && (
-                <button type="button" className={styles.backButton} onClick={() => setRoomId(null)}>
+              {room !== null && rooms && (
+                <button type="button" className={styles.backButton} onClick={() => setRoom(null)}>
                   ← 목록으로
                 </button>
               )}
@@ -88,10 +88,10 @@ export default function ChatButton({ postId }: ChatButtonProps) {
             </div>
 
             {/* 방 열림 */}
-            {roomId !== null && <ChatRoom roomId={roomId} />}
+            {room !== null && <ChatRoom room={room} />}
 
             {/* 방 N개 → 목록 표시 */}
-            {roomId === null && rooms && <ChatRoomList rooms={rooms} onSelect={setRoomId} />}
+            {room === null && rooms && <ChatRoomList rooms={rooms} onSelect={setRoom} />}
           </div>
         </div>
       )}

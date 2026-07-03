@@ -14,12 +14,17 @@ export interface RoomSummary {
   postId: number;
   buyerId: number;
   sellerId: number;
+  buyerNickname?: string;
+  sellerNickname?: string;
+  postTitle?: string;
+  postPrice?: number;
+  unreadCount?: number;
   createdAt?: string;
 }
 
 interface ChatRoomListProps {
   rooms: RoomSummary[];
-  onSelect: (roomId: number) => void;
+  onSelect: (room: RoomSummary) => void;
 }
 
 export default function ChatRoomList({ rooms, onSelect }: ChatRoomListProps) {
@@ -27,8 +32,8 @@ export default function ChatRoomList({ rooms, onSelect }: ChatRoomListProps) {
     <ul className={styles.list}>
       {rooms.map((room) => (
         <li key={room.id}>
-          <button type="button" onClick={() => onSelect(room.id)}>
-            <span>구매자 #{room.buyerId}</span>
+          <button type="button" onClick={() => onSelect(room)}>
+            <span>{room.buyerNickname ?? '구매자'} (id:{room.buyerId})</span>
             <span>방 {room.id}</span>
           </button>
         </li>

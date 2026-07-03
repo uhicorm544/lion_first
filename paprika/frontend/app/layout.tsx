@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '../styles/globals.css';
 import Header from '../components/layout/Header';
 import { AuthProvider } from '../contexts/AuthContext';
+import { UnreadProvider } from '../contexts/UnreadContext';
 
 export const metadata: Metadata = {
   title: 'Paprika - 동네 중고 마켓',
@@ -23,8 +24,10 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
-          <Header />
-          <div style={{ paddingTop: 72 }}>{children}</div>
+          <UnreadProvider>
+            <Header />
+            <div style={{ paddingTop: 72 }}>{children}</div>
+          </UnreadProvider>
         </AuthProvider>
       </body>
     </html>

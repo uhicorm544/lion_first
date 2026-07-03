@@ -1,92 +1,150 @@
 'use client';
 
 /**
- * 채팅방 목록 + ChatButton 테스트 하니스
+ * 채팅 목록 페이지 — 내가 참여한 채팅방을 판매/구매로 나눠 보여준다.
  * 담당: C - 한대천
  *
- * 테스트 박스에서 게시글id만 입력해 enter 동작을 확인한다.
- * 판매자/구매자 구분은 로그인한 유저(JWT)와 posts.user_id 비교로 서버가 판단한다.
+ * GET /api/v1/chat/rooms → 내 방(구매자/판매자 모두) 목록
+ *  - 내가 sellerId 인 방  → "판매 채팅"
+ *  - 내가 buyerId 인 방   → "구매 채팅"
+ * 방을 누르면 해당 채팅방을 모달로 연다.
  */
-import { useState } from 'react';
-import type { CSSProperties } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import api from '@/lib/api';
+import { getAccessToken } from '@/lib/auth';
+import { useUnread } from '@/contexts/UnreadContext';
+import ChatRoom from '@/components/chat/ChatRoom';
+import type { RoomSummary } from '@/components/chat/ChatRoomList';
 import styles from './page.module.css';
-import ChatButton from '@/components/chat/ChatButton';
-import TradeButton from "@/components/transactions/TradeButton";
 
-const rooms = [
-  {
-    id: 'public',
-    href: '/chat/public',
-    name: '🌐 전체 공개 채팅방',
-    desc: '로그인 없이 누구나 참여할 수 있어요',
-  },
-  // TODO: 로그인 시 1:1 거래 채팅방들 (GET /api/v1/chat/rooms)
-];
-
-const labelStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  fontSize: 12,
-  color: 'var(--color-on-surface-variant)',
-};
-
-const inputStyle: CSSProperties = {
-  width: 80,
-  padding: '6px 8px',
-  border: '1px solid var(--color-outline-variant)',
-  borderRadius: 8,
-  fontSize: 14,
-};
+// JWT sub 클레임 = 내 유저 id
+function myUserIdFromToken(): number | undefined {
+  const token = getAccessToken();
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload?.sub != null ? Number(payload.sub) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export default function ChatListPage() {
-  const [postId, setPostId] = useState(1);
+  const [rooms, setRooms] = useState<RoomSummary[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<RoomSummary | null>(null);
+  const myId = useMemo(() => myUserIdFromToken(), []);
+  const { unreadByRoom, setRoomsUnread, clearRoom } = useUnread();
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    api
+      .get('/api/v1/chat/rooms')
+      .then((res) => {
+        if (!cancelled) {
+          const list: RoomSummary[] = res.data?.data ?? [];
+          setRooms(list);
+          setRoomsUnread(list); // 서버 계산 unread를 전역 상태에 시드
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setError(e?.response?.data?.message ?? '채팅방 목록을 불러오지 못했습니다.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [setRoomsUnread]);
+
+  const sellingRooms = (rooms ?? []).filter((r) => r.sellerId === myId);
+  const buyingRooms = (rooms ?? []).filter((r) => r.buyerId === myId);
+
+  const openRoom = (room: RoomSummary) => {
+    clearRoom(room.id); // 열면 즉시 뱃지 제거 (백엔드 markRead와 별개로 UI 반영)
+    setSelected(room);
+  };
+
+  // 방 한 줄 렌더 (상대 닉네임 + 상품명 + 안읽음 뱃지). 뱃지는 전역 상태(실시간) 우선.
+  const renderRoom = (room: RoomSummary, counterpartName: string) => {
+    const unread = unreadByRoom[room.id] ?? room.unreadCount ?? 0;
+    return (
+      <li key={room.id}>
+        <button type="button" className={styles.roomItem} onClick={() => openRoom(room)}>
+          <span className={styles.roomTitle}>{room.postTitle ?? '상품'}</span>
+          <span className={styles.roomSub}>{counterpartName}</span>
+          {unread > 0 && (
+            <span className={styles.badge}>{unread > 99 ? '99+' : unread}</span>
+          )}
+        </button>
+      </li>
+    );
+  };
 
   return (
     <div className={styles.chatList}>
+      <h1>채팅</h1>
 
+      {loading && <p>불러오는 중…</p>}
+      {error && <p style={{ color: 'var(--color-error)' }}>{error}</p>}
 
-        <TradeButton postId={5} />
+      {!loading && !error && (
+        <>
+          {/* 판매 채팅 (내가 판매자) */}
+          <section>
+            <h2>판매 채팅 <small>내가 판매자</small></h2>
+            {sellingRooms.length === 0 ? (
+              <p className={styles.empty}>받은 문의가 없습니다.</p>
+            ) : (
+              <ul className={styles.rooms}>
+                {sellingRooms.map((room) =>
+                  renderRoom(room, `구매자: ${room.buyerNickname ?? '구매자'} (id:${room.buyerId})`),
+                )}
+              </ul>
+            )}
+          </section>
 
-      {/* ── 테스트 하니스 (확인 후 제거) ─────────────────────────────── */}
-      <div
-        style={{
-          padding: 16,
-          border: '1px dashed var(--color-outline)',
-          borderRadius: 12,
-          marginBottom: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--color-on-surface-variant)' }}>
-          [테스트] 게시글id만 입력. 판매자/구매자는 로그인 토큰(JWT)으로 서버가 판단 (localStorage에 accessToken 필요)
-        </p>
+          {/* 구매 채팅 (내가 구매자) */}
+          <section>
+            <h2>구매 채팅 <small>내가 구매자</small></h2>
+            {buyingRooms.length === 0 ? (
+              <p className={styles.empty}>진행 중인 대화가 없습니다.</p>
+            ) : (
+              <ul className={styles.rooms}>
+                {buyingRooms.map((room) =>
+                  renderRoom(room, `판매자: ${room.sellerNickname ?? '판매자'} (id:${room.sellerId})`),
+                )}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <label style={labelStyle}>
-            게시글id
-            <input type="number" value={postId} onChange={(e) => setPostId(Number(e.target.value))} style={inputStyle} />
-          </label>
+      {/* 선택한 방 → 모달로 채팅 열기 */}
+      {selected && (
+        <div className={styles.backdrop} onClick={() => setSelected(null)} role="presentation">
+          <div
+            className={styles.dialog}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="채팅"
+          >
+            <div className={styles.dialogHeader}>
+              <button type="button" className={styles.closeButton} onClick={() => setSelected(null)}>
+                닫기
+              </button>
+            </div>
+            <ChatRoom room={selected} />
+          </div>
         </div>
-
-        {/* key로 입력이 바뀌면 ChatButton을 새로(닫힌 상태) 다시 마운트 */}
-        <ChatButton postId={postId} />
-      </div>
-      {/* ─────────────────────────────────────────────────────────────── */}
-
-      <ul>
-        {rooms.map((room) => (
-          <li key={room.id}>
-            <Link href={room.href}>
-              <strong>{room.name}</strong>
-              <span>{room.desc}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      )}
     </div>
   );
 }
