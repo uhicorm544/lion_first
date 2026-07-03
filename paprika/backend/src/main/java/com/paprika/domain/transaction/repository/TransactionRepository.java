@@ -30,12 +30,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     /** 중복 거래 방지: 동일 게시글에 특정 상태인 거래가 있는지 확인 */
     boolean existsByPostIdAndStatusIn(Long postId, List<TransactionStatus> statuses);
-
-    /** 동일 구매자·게시글에 진행 중인 거래가 있는지 확인 */
-    boolean existsByPostIdAndBuyerIdAndStatusIn(
-            Long postId, Long buyerId, List<TransactionStatus> statuses);
-
-    /** 같은 상품의 다른 PENDING 거래 조회 (확정 시 일괄 취소용) */
-    List<Transaction> findByPostIdAndStatusAndIdNot(
-            Long postId, TransactionStatus status, Long excludeId);
 }

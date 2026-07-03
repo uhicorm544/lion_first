@@ -29,9 +29,10 @@ import java.util.List;
  * 담당: D - 이동준
  *
  * 거래 상태를 전이시키고, 그에 맞춰 상품(post) 상태 변경을 PostStatusClient로 "요청"한다.
- *  - 거래 확정(AGREED)   -> 상품 RESERVED(예약중), 같은 상품의 다른 PENDING 일괄 취소
- *  - 거래 완료(COMPLETED) -> 상품 SOLD(판매완료)
- *  - 거래 취소(CANCELLED) -> 상품 SELLING(판매중) 복구
+ * PENDING 단계는 제거되어 거래 생성 즉시 AGREED로 시작한다.
+ *  - 거래 생성/확정(AGREED) -> 상품 RESERVED(예약중)
+ *  - 거래 완료(COMPLETED)   -> 상품 SOLD(판매완료)
+ *  - 거래 취소(CANCELLED)   -> 상품 SELLING(판매중) 복구
  * (상품 상태를 실제로 바꾸는 부분은 post 담당 팀원이 PostStatusClient 구현에서 처리)
  *
  * TODO:
@@ -49,20 +50,11 @@ public class TransactionService {
     private final PostStatusClient postStatusClient;
     private final PostQueryClient postQueryClient;
 
-    /** 거래 생성: 상품 정보를 조회해 거래(PENDING)와 방식별 상세를 저장한다. (buyerId = 거래하기를 누른 로그인 사용자) */
+    /** 거래 생성: 상품 정보를 조회해 거래(AGREED)와 방식별 상세를 저장하고 상품을 예약중으로 바꾼다. (buyerId = 거래하기를 누른 로그인 사용자) */
     @Transactional
     public TransactionResponse createTransaction(TransactionCreateRequest request, Long buyerId) {
-        // 같은 구매자가 같은 상품에 이미 진행 중(PENDING/AGREED)인 거래가 있으면 중복 생성 방지
-        boolean myInProgressExists = transactionRepository.existsByPostIdAndBuyerIdAndStatusIn(
-                request.getPostId(),
-                buyerId,
-                List.of(TransactionStatus.PENDING, TransactionStatus.AGREED));
-        if (myInProgressExists) {
-            throw new IllegalStateException(
-                    "이미 진행 중인 거래가 있습니다. postId=" + request.getPostId());
-        }
-
-        // 다른 구매자는 PENDING 가능. 확정(AGREED)된 거래가 있으면 해당 상품은 더 이상 거래 불가
+        // PENDING 단계가 사라져 생성 즉시 AGREED가 되므로,
+        // 같은 상품에 확정(AGREED)된 거래가 하나라도 있으면 새 거래 생성 불가.
         boolean agreedExists = transactionRepository.existsByPostIdAndStatusIn(
                 request.getPostId(),
                 List.of(TransactionStatus.AGREED));
@@ -120,7 +112,33 @@ public class TransactionService {
             deliveryTransactionRepository.save(delivery);
         }
 
+        // 택배(DELIVERY)는 생성 즉시 상품을 예약중(RESERVED)으로 잠근다.
+        // 직거래(DIRECT)는 약속 장소·시간을 확정하는 시점(updateMeeting)에 RESERVED로 바꾼다.
+        if (request.getType() == TransactionType.DELIVERY) {
+            postStatusClient.markReserved(transaction.getPostId());
+        }
+
         return TransactionResponse.of(transaction, direct, delivery);
+    }
+
+    /**
+     * 직거래 약속 확정: 장소·시간을 저장하고 상품을 예약중(RESERVED)으로 바꾼다.
+     * 이미 AGREED 상태의 거래 위에 약속 정보를 얹는 방식이다.
+     */
+    @Transactional
+    public void updateMeeting(Long transactionId, String meetingLocation,
+                              java.time.LocalDateTime meetingTime) {
+        Transaction transaction = findTransaction(transactionId);
+        if (transaction.getType() != TransactionType.DIRECT) {
+            throw new IllegalArgumentException("직거래만 약속 확정이 가능합니다. id=" + transactionId);
+        }
+
+        DirectTransaction direct = directTransactionRepository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "직거래 상세를 찾을 수 없습니다. id=" + transactionId));
+        direct.confirmMeeting(meetingLocation, meetingTime);
+
+        postStatusClient.markReserved(transaction.getPostId());
     }
 
     /** 거래 상세 조회: 공통 정보 + 방식별 상세를 합쳐 반환한다. */ 
@@ -130,13 +148,12 @@ public class TransactionService {
         return toResponse(transaction);
     }
 
-    /** 내 거래 목록 조회(구매자/판매자 모두): 진행 중 + 완료 건까지 표시 (취소 제외) */
+    /** 내 거래 목록 조회(구매자/판매자 모두): 확정 + 완료 건까지 표시 (취소 제외) */
     public List<TransactionResponse> getMyTransactions(Long userId) {
         return transactionRepository
                 .findMyTransactions(
                         userId,
                         List.of(
-                                TransactionStatus.PENDING,
                                 TransactionStatus.AGREED,
                                 TransactionStatus.COMPLETED))
                 .stream()
@@ -156,18 +173,17 @@ public class TransactionService {
         return TransactionResponse.of(transaction, direct, delivery);
     }
 
-    /** 거래 확정: 거래를 AGREED로, 상품을 RESERVED(예약중)로 변경 요청. 같은 상품의 다른 PENDING은 일괄 취소 */
+    /**
+     * 거래 확정 (하위 호환 유지).
+     * PENDING 단계가 삭제되어 거래는 이미 생성 시점부터 AGREED이다.
+     * 기존 프론트가 여전히 PATCH /{id}/status {AGREED}를 호출하는 경우에도
+     * 오류 없이 통과하도록 상태를 다시 AGREED로 셋팅하고 상품도 RESERVED로 재요청한다.
+     */
     @Transactional
     public void agreeTransaction(Long transactionId) {
         Transaction transaction = findTransaction(transactionId);
-        Long postId = transaction.getPostId();
-
-        transactionRepository
-                .findByPostIdAndStatusAndIdNot(postId, TransactionStatus.PENDING, transactionId)
-                .forEach(Transaction::cancel);
-
         transaction.agree();
-        postStatusClient.markReserved(postId);
+        postStatusClient.markReserved(transaction.getPostId());
     }
 
     /** 거래 완료: 거래를 COMPLETED로, 상품을 SOLD(판매완료)로 변경 요청 */
@@ -178,15 +194,14 @@ public class TransactionService {
         postStatusClient.markSold(transaction.getPostId());
     }
 
-    /** 거래 취소: 구매자/판매자만 가능, 진행 중(PENDING/AGREED) 건만 취소 */
+    /** 거래 취소: 구매자/판매자만 가능, 확정(AGREED) 건만 취소 */
     @Transactional
     public void cancelTransaction(Long transactionId, Long userId) {
         Transaction transaction = findTransaction(transactionId);
         if (!transaction.getBuyerId().equals(userId) && !transaction.getSellerId().equals(userId)) {
             throw new PaprikaException(ErrorCode.TRANSACTION_ACCESS_DENIED);
         }
-        if (transaction.getStatus() != TransactionStatus.PENDING
-                && transaction.getStatus() != TransactionStatus.AGREED) {
+        if (transaction.getStatus() != TransactionStatus.AGREED) {
             throw new PaprikaException(ErrorCode.INVALID_TRANSACTION_STATUS);
         }
         transaction.cancel();

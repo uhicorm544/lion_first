@@ -48,7 +48,7 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionStatus status = TransactionStatus.PENDING;
+    private TransactionStatus status = TransactionStatus.AGREED;
 
     @Column(nullable = false)
     private BigDecimal itemPrice; // 상품 가격
@@ -80,7 +80,8 @@ public class Transaction {
         this.sellerId = sellerId;
         this.buyerId = buyerId;
         this.type = type;
-        this.status = TransactionStatus.PENDING;
+        // PENDING 단계 삭제 — 거래 생성 즉시 AGREED 상태로 시작한다.
+        this.status = TransactionStatus.AGREED;
         this.itemPrice = itemPrice;
         this.paymentMethod = paymentMethod;
         // 직거래(DIRECT)는 수수료 없음, 택배(DELIVERY)+카드만 3.5% 수수료
@@ -108,8 +109,10 @@ public class Transaction {
     public enum PaymentMethod { CASH, CARD }
 
     public enum TransactionStatus {
-        PENDING,    // 거래 요청
-        AGREED,     // 거래 확정
+        // PENDING 은 더 이상 사용하지 않는다. 기존 DB 호환을 위해 enum 값은 남겨두되
+        // 신규 거래는 항상 AGREED 로 생성한다.
+        PENDING,    // (deprecated) 거래 요청
+        AGREED,     // 거래 확정 (신규 거래의 초기 상태)
         COMPLETED,  // 거래 완료
         CANCELLED   // 거래 취소
     }

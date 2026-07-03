@@ -86,20 +86,38 @@ export default function TransactionSetup({ title = '거래 방식 선택', postI
       return;
     }
 
+    // 직거래: 먼저 서버에 거래(AGREED)를 만들어두고, 그 transactionId를 붙여
+    //        약속 확정 페이지로 이동한다. (post 상태는 아직 SELLING 유지)
     if (isDirect) {
-      const params = new URLSearchParams();
-      params.set('postId', postId);
-      params.set('price', String(postInfo.price));
-      router.push(`/transactions/direct?${params.toString()}`);
+      setSubmitting(true);
+      try {
+        const res = await api.post<ApiResponse<{ id: number }>>('/api/v1/transactions', {
+          postId: Number(postId),
+          type: 'DIRECT',
+          itemPrice: postInfo.price,
+        });
+        const txId = res.data.data.id;
+        const params = new URLSearchParams();
+        params.set('postId', postId);
+        params.set('price', String(postInfo.price));
+        params.set('txId', String(txId));
+        router.push(`/transactions/direct?${params.toString()}`);
+      } catch (error) {
+        const message =
+          (axios.isAxiosError(error) && error.response?.data?.message) ||
+          '직거래 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+        alert(message);
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
     if (!isDelivery || !payment) {
       return;
     }
-    //지금 서버 저장중이라고 알려주는 것
+    // 택배거래: 생성 즉시 AGREED + 상품 RESERVED
     setSubmitting(true);
-    console.log("postId: ", postId);
     try {
       await api.post('/api/v1/transactions', {
         postId: Number(postId),
@@ -117,7 +135,7 @@ export default function TransactionSetup({ title = '거래 방식 선택', postI
     } finally {
       setSubmitting(false);
     }
-   };
+  };
 
   if (!postId) {
     return <p className={styles.empty}>상품 정보가 없습니다. 상품 상세에서 거래하기를 눌러 주세요.</p>;

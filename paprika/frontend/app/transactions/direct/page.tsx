@@ -17,6 +17,8 @@ function DirectTransactionContent() {
   const { user, loading: authLoading } = useAuth();
   const postId = searchParams.get('postId');
   const price = searchParams.get('price');
+  // TransactionSetup 완료 단계에서 미리 만들어둔 거래 id (신규 흐름)
+  const txId = searchParams.get('txId');
 
   const [meetingLocation, setMeetingLocation] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
@@ -105,20 +107,29 @@ function DirectTransactionContent() {
       return;
     }
 
-    // 약속 확정 시: 거래 생성(PENDING) → 확정(AGREED)으로 상품을 예약중으로 변경 요청
-    let transactionId: number;
+    // 약속 확정 흐름
+    //  - 신규(txId 있음): 이미 만들어져 있는 거래에 약속 정보를 얹고 상품을 예약중으로 잠근다.
+    //  - 구(txId 없음): 하위 호환용 — 거래를 새로 만들면서 곧바로 AGREED 처리한다.
     try {
-      console.log("거래입력");
-      const createRes = await api.post<ApiResponse<{ id: number }>>('/api/v1/transactions', {
-        postId: Number(postId),
-        type: 'DIRECT',
-        itemPrice: Number(price),
-        meetingLocation,
-        // 위에서 16자 검증을 통과했으므로 항상 ISO(LocalDateTime) 형식으로 전송
-        meetingTime: meetingTime.replace(' ', 'T'),
-      });
-      transactionId = createRes.data.data.id;
-      await api.patch(`/api/v1/transactions/${transactionId}/status`, { status: 'AGREED' });
+      if (txId) {
+        await api.patch(`/api/v1/transactions/${txId}/meeting`, {
+          meetingLocation,
+          meetingTime: meetingTime.replace(' ', 'T'),
+        });
+      } else {
+        const createRes = await api.post<ApiResponse<{ id: number }>>('/api/v1/transactions', {
+          postId: Number(postId),
+          type: 'DIRECT',
+          itemPrice: Number(price),
+          meetingLocation,
+          meetingTime: meetingTime.replace(' ', 'T'),
+        });
+        const newId = createRes.data.data.id;
+        await api.patch(`/api/v1/transactions/${newId}/meeting`, {
+          meetingLocation,
+          meetingTime: meetingTime.replace(' ', 'T'),
+        });
+      }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;

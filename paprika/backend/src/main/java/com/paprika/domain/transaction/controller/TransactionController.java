@@ -2,6 +2,7 @@ package com.paprika.domain.transaction.controller;
 
 import com.paprika.domain.transaction.client.PostInfo;
 import com.paprika.domain.transaction.client.PostQueryClient;
+import com.paprika.domain.transaction.dto.MeetingUpdateRequest;
 import com.paprika.domain.transaction.dto.TransactionCreateRequest;
 import com.paprika.domain.transaction.dto.TransactionResponse;
 import com.paprika.domain.transaction.dto.TransactionStatusRequest;
@@ -24,7 +25,6 @@ import java.util.List;
  *
  * TODO:
  *  - PATCH  /api/v1/transactions/{id}/tracking       운송장 번호 입력 (택배)
- *  - PATCH  /api/v1/transactions/{id}/meeting        약속 장소/시간 설정 (직거래)
  */
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -53,7 +53,7 @@ public class TransactionController {
         return ResponseEntity.ok(ApiResponse.ok(postQueryClient.getPostInfo(postId)));
     }
 
-    // 내 거래 목록 조회 (진행 중 + 완료, 상태 페이지 재방문 시에도 표시)
+    // 내 거래 목록 조회 (확정 + 완료, 상태 페이지 재방문 시에도 표시)
     @GetMapping
     public ResponseEntity<ApiResponse<List<TransactionResponse>>> getMyTransactions(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -68,7 +68,10 @@ public class TransactionController {
         return ResponseEntity.ok(ApiResponse.ok(transactionService.getTransaction(id)));
     }
 
-    // 거래 상태 변경: AGREED(확정) -> 상품 예약중 요청 / CANCELLED(취소) -> 상품 판매중 복구 요청
+    // 거래 상태 변경 (하위 호환 유지):
+    //  - PENDING 은 제거되어 거래는 생성 즉시 AGREED 로 만들어진다.
+    //  - AGREED   : 이미 AGREED 이므로 사실상 no-op + 상품 RESERVED 재보정
+    //  - CANCELLED: 거래 취소 + 상품 SELLING 으로 복구
     // (POST 테이블 실제 변경·홈페이지 표시는 POST 담당. 여기서는 변경을 "요청"만 한다)
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<Void>> updateStatus(
@@ -95,6 +98,16 @@ public class TransactionController {
     ) {
         // TODO: 구현
         return ResponseEntity.ok(ApiResponse.ok("운송장 번호가 등록되었습니다.", null));
+    }
+
+    // 직거래 약속 확정: 장소·시간 저장 + 상품 예약중(RESERVED)으로 변경 요청
+    @PatchMapping("/{id}/meeting")
+    public ResponseEntity<ApiResponse<Void>> updateMeeting(
+            @PathVariable Long id,
+            @Valid @RequestBody MeetingUpdateRequest request
+    ) {
+        transactionService.updateMeeting(id, request.getMeetingLocation(), request.getMeetingTime());
+        return ResponseEntity.ok(ApiResponse.ok("약속이 확정되었습니다.", null));
     }
 
     // 거래 최종 완료: 거래 COMPLETED -> 상품 SOLD(판매완료)로 변경 요청
