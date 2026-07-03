@@ -230,14 +230,17 @@ function MyPageContent() {
     if (t.status === 'PENDING' || t.status === 'AGREED') {
       return (
         <div className={styles.actionButtons}>
-          <button
-            type="button"
-            className={styles.confirmTransactionBtn}
-            disabled={confirmingId === t.id}
-            onClick={() => handleConfirmTransaction(t.id)}
-          >
-            {confirmingId === t.id ? '처리 중...' : '거래 확정'}
-          </button>
+          {/* 거래 확정(COMPLETED 전환)은 구매자만 — 판매자가 임의로 완료 처리하면 구매자가 취소할 수단이 없어짐 */}
+          {t.myRole === 'BUYER' && (
+            <button
+              type="button"
+              className={styles.confirmTransactionBtn}
+              disabled={confirmingId === t.id}
+              onClick={() => handleConfirmTransaction(t.id)}
+            >
+              {confirmingId === t.id ? '처리 중...' : '거래 확정'}
+            </button>
+          )}
           <CancelTransactionButton
             transactionId={t.id}
             className={styles.cancelTransactionBtn}
@@ -294,7 +297,12 @@ function MyPageContent() {
                 <div key={t.id} className={styles.card}>
                   <img src={t.imgUrl} alt="상품" className={styles.cardImg} />
                   <div className={styles.cardInfo}>
-                    <p className={styles.cardTitle}>상품 #{t.postId} (거래 #{t.id})</p>
+                    <p className={styles.cardTitle}>
+                      <Link href={`/products/${t.postId}`} className={styles.cardTitleLink}>
+                        상품 #{t.postId}
+                      </Link>
+                      {' '}(거래 #{t.id})
+                    </p>
                     <p className={styles.cardType}>
                       {t.type === 'DIRECT' ? '직거래' : '택배'} · {t.myRole === 'BUYER' ? '구매' : '판매'}
                     </p>

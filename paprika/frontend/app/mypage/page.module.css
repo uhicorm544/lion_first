@@ -28,6 +28,11 @@
 
 .cardInfo { flex: 1; }
 .cardTitle { font-weight: 600; margin-bottom: 4px; }
+.cardTitleLink {
+  color: inherit;
+  text-decoration: none;
+}
+.cardTitleLink:hover { text-decoration: underline; }
 .cardType { font-size: 13px; color: var(--color-on-surface-variant); }
 .cardRight { text-align: right; }
 .cardPrice { font-weight: 700; margin-bottom: 4px; }
