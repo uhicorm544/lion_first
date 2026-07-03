@@ -10,6 +10,7 @@ import com.paprika.global.exception.ErrorCode;
 import com.paprika.global.exception.PaprikaException;
 import com.paprika.global.response.ApiResponse;
 import com.paprika.global.security.CustomUserDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -22,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -99,7 +101,9 @@ public class ChatController {
             @PageableDefault(size = 30) Pageable pageable
     ) {
         // 최근 N개를 시간순(오래된→최신)으로 반환. TODO: 위로 스크롤 시 커서 페이징
-        List<ChatMessageResponse> messages = chatService.getMessages(roomId, pageable)
+        // 방 당사자(구매자/판매자)만 조회 가능 — 현재 로그인 사용자를 서비스로 넘겨 검증한다.
+        Long me = getCurrentUserId();
+        List<ChatMessageResponse> messages = chatService.getMessages(roomId, me, pageable)
                 .stream()
                 .map(ChatMessageResponse::from)
                 .toList();
@@ -107,15 +111,25 @@ public class ChatController {
     }
 
     // WebSocket 메시지 핸들러: 받은 메시지를 DB에 저장하고, 저장된 결과를 방 구독자 전원에게 브로드캐스트
-    // TODO: 인증된 senderId 사용(현재는 메시지의 senderId 또는 임시 유저), 상대방 알림(/user/{userId}/notification)
+    // 발신자(senderId)는 클라이언트 값을 신뢰하지 않고, CONNECT 때 인증된 세션 Principal에서 가져온다(위조 방지).
+    // TODO: 상대방 알림(/user/{userId}/notification)
     @MessageMapping("/chat/{roomId}")
     @SendTo("/topic/chat/{roomId}")
     public ChatMessageResponse sendMessage(@DestinationVariable Long roomId,
-                                           @Payload ChatMessageRequest req) {
-        // TEMP: senderId가 실려오면 그걸 사용(테스트), 없으면 임시 현재 유저
-        Long senderId = req.getSenderId() != null ? req.getSenderId() : getCurrentUserId();
+                                           @Payload @Valid ChatMessageRequest req,
+                                           Principal principal) {
+        Long senderId = resolveSenderId(principal);
         ChatMessage saved = chatService.saveMessage(roomId, senderId, req.getContent());
         return ChatMessageResponse.from(saved);
+    }
+
+    /** STOMP 세션 Principal(인터셉터가 심은 인증)에서 발신자 id를 꺼낸다. */
+    private Long resolveSenderId(Principal principal) {
+        if (principal instanceof Authentication authentication
+                && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            return userDetails.getUserId();
+        }
+        throw new PaprikaException(ErrorCode.UNAUTHORIZED);
     }
 
 

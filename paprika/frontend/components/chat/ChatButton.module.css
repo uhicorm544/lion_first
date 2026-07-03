@@ -2,7 +2,7 @@
 .trigger {
   padding: 10px 16px;
   border: none;
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 18px;
   background: var(--color-primary);
   color: var(--color-on-primary);
   font-size: 14px;
@@ -20,8 +20,8 @@
   justify-content: center;
   padding: 24px;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
 
 /* 모달 본체 — 화면 위 중앙에 넓게 표시 */

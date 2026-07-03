@@ -64,7 +64,34 @@ export default function ProductsTestPage() {
 
   return (
     <main style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
-      <h1>상품 목록 (테스트)</h1>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <h1 style={{ margin: 0 }}>상품 목록 (테스트)</h1>
+        <Link
+          href="/products/new"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 16px',
+            borderRadius: 18,
+            background: 'var(--color-primary)',
+            color: 'var(--color-on-primary, #fff)',
+            fontSize: 14,
+            fontWeight: 600,
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          + 상품 등록
+        </Link>
+      </div>
 
       {loading && <p>불러오는 중…</p>}
       {error && <p style={{ color: 'var(--color-error)' }}>{error}</p>}

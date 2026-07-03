@@ -13,6 +13,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +33,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ChatService {
+
+    private static final int MAX_MESSAGE_LENGTH = 1000;
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
@@ -76,14 +79,44 @@ public class ChatService {
                 });
     }
 
-    /** 메시지 저장 (room_id, sender_id, content). created_at은 자동. */
+    /**
+     * 메시지 저장 (room_id, sender_id, content). created_at은 자동.
+     * 발신자가 그 방의 당사자(구매자/판매자)일 때만 저장한다(SUBSCRIBE 인가와 별개의 심층 방어).
+     */
     @Transactional
     public ChatMessage saveMessage(Long chatRoomId, Long senderId, String content) {
-        return chatMessageRepository.save(ChatMessage.create(chatRoomId, senderId, content));
+        String normalizedContent = normalizeContent(content);
+        ChatRoom room = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        if (!room.getBuyerId().equals(senderId) && !room.getSellerId().equals(senderId)) {
+            throw new PaprikaException(ErrorCode.CHAT_ACCESS_DENIED);
+        }
+        return chatMessageRepository.save(ChatMessage.create(chatRoomId, senderId, normalizedContent));
     }
 
-    /** 방의 최근 메시지 N개를 시간순(오래된→최신)으로 반환. */
-    public List<ChatMessage> getMessages(Long roomId, Pageable pageable) {
+    private String normalizeContent(String content) {
+        if (!StringUtils.hasText(content)) {
+            throw new PaprikaException(ErrorCode.INVALID_INPUT);
+        }
+        String trimmed = content.trim();
+        if (trimmed.length() > MAX_MESSAGE_LENGTH) {
+            throw new PaprikaException(ErrorCode.INVALID_INPUT);
+        }
+        return trimmed;
+    }
+
+    /**
+     * 방의 최근 메시지 N개를 시간순(오래된→최신)으로 반환.
+     * 요청자가 그 방의 당사자(구매자 또는 판매자)일 때만 조회 가능하다.
+     * roomId만 믿지 않고 방을 조회해 참여자인지 검증한다(IDOR 방지).
+     */
+    public List<ChatMessage> getMessages(Long roomId, Long userId, Pageable pageable) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new PaprikaException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        if (!room.getBuyerId().equals(userId) && !room.getSellerId().equals(userId)) {
+            throw new PaprikaException(ErrorCode.CHAT_ACCESS_DENIED);
+        }
+
         List<ChatMessage> recent = new ArrayList<>(
                 chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(roomId, pageable).getContent());
         Collections.reverse(recent); // DESC로 뽑은 걸 뒤집어 오래된→최신

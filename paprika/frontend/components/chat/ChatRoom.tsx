@@ -26,7 +26,7 @@ interface Msg {
   content: string;
 }
 
-// JWT(access token)의 sub 클레임 = 내 유저 id. "내 메시지" 판별과 senderId 전송에 사용.
+// JWT(access token)의 sub 클레임 = 내 유저 id. "내 메시지" 판별에 사용.
 function myUserIdFromToken(): number | undefined {
   const token = getAccessToken();
   if (!token) return undefined;
@@ -98,7 +98,7 @@ export default function ChatRoom({ roomId }: { roomId: number }) {
     e.preventDefault();
     const text = input.trim();
     if (!text) return;
-    sendMessage(roomId, text, myId);
+    sendMessage(roomId, text);
     setInput('');
   };
 

@@ -50,13 +50,13 @@ export const subscribeToRoom = (
   return stompClient.subscribe(`/topic/chat/${roomId}`, callback);
 };
 
-export const sendMessage = (roomId: number, content: string, senderId?: number) => {
+export const sendMessage = (roomId: number, content: string) => {
   if (!stompClient?.connected) {
     console.warn('WebSocket not connected. Call connectSocket first.');
     return;
   }
   stompClient.publish({
     destination: `/app/chat/${roomId}`,
-    body: JSON.stringify({ content, senderId }),
+    body: JSON.stringify({ content }),
   });
 };
