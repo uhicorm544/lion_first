@@ -110,24 +110,16 @@ public class Post extends BaseTimeEntity {
 
     /* --- 2. Builder --- */
     @Builder
-    private Post(Long userId, String title, String content, BigDecimal currentPrice) {
+    private Post(Long userId, String title, String content, BigDecimal currentPrice, double latitude, double longitude,
+            PostCategory category, String thumbnailUrl) {
         this.userId = userId;
         this.title = title;
         this.content = content;
         this.currentPrice = currentPrice;
-    }
-
-    /* --- 2.1. static Factory Method */
-    public static Post createPost(Long userId, String title, String content, BigDecimal currentPrice) {
-        if (userId == null || title == null || content == null || currentPrice == null) {
-            throw new IllegalArgumentException("필수 값이 누락 되었습니다.");
-        }
-        return Post.builder()
-                .userId(userId)
-                .title(title)
-                .content(content)
-                .currentPrice(currentPrice)
-                .build();
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.category = category;
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     /* --- 3. Entity Method --- */
@@ -172,6 +164,10 @@ public class Post extends BaseTimeEntity {
     /**
      * Post Soft delete
      */
+    public void updateThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
     public void softDeletePost() {
         if (this.active) {
             this.active = false;

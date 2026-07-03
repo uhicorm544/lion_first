@@ -43,6 +43,7 @@ export interface Product {
 export interface PostApiResponse {
   id: number;
   userId: number;
+  nickname: string;
   title: string;
   content: string;
   latitude: number;

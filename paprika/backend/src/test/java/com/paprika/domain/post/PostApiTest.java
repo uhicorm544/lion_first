@@ -116,7 +116,7 @@ class PostApiTest {
         @DisplayName("GET /api/v1/posts - 전체 조회 (active=true만)")
         void getPosts_returnsActivePosts() throws Exception {
                 Post deletedPost = postRepository.save(
-                                Post.createPost(1L, "삭제된 상품", "설명", BigDecimal.valueOf(2000)));
+                                Post.builder().userId(1L).title("삭제된 상품").content("설명").currentPrice(BigDecimal.valueOf(2000)).build());
                 deletedPost.softDeletePost();
 
                 mockMvc.perform(get("/api/v1/posts"))
@@ -138,7 +138,7 @@ class PostApiTest {
         @DisplayName("GET /api/v1/posts/{id} - 단건 조회 정상")
         void getPost_success() throws Exception {
                 Post post = postRepository.save(
-                                Post.createPost(1L, "단건조회 상품", "상품 설명", BigDecimal.valueOf(3000)));
+                                Post.builder().userId(1L).title("단건조회 상품").content("상품 설명").currentPrice(BigDecimal.valueOf(3000)).build());
 
                 mockMvc.perform(get("/api/v1/posts/{id}", post.getId()))
                                 .andExpect(status().isOk())
@@ -158,7 +158,7 @@ class PostApiTest {
         @DisplayName("GET /api/v1/posts/{id} - soft delete된 상품은 조회 안 됨 → 400")
         void getPost_softDeleted_returns400() throws Exception {
                 Post post = postRepository.save(
-                                Post.createPost(1L, "삭제된 상품", "설명", BigDecimal.valueOf(1000)));
+                                Post.builder().userId(1L).title("삭제된 상품").content("설명").currentPrice(BigDecimal.valueOf(1000)).build());
                 post.softDeletePost();
 
                 mockMvc.perform(get("/api/v1/posts/{id}", post.getId()))
@@ -171,7 +171,7 @@ class PostApiTest {
         @DisplayName("PUT /api/v1/posts/{id} - 정상 수정")
         void updatePost_success() throws Exception {
                 Post post = postRepository.save(
-                                Post.createPost(1L, "원래 제목", "원래 설명", BigDecimal.valueOf(1000)));
+                                Post.builder().userId(1L).title("원래 제목").content("원래 설명").currentPrice(BigDecimal.valueOf(1000)).build());
 
                 PostCreateRequest request = PostCreateRequest.builder()
                                 .title("수정된 제목")
@@ -195,7 +195,7 @@ class PostApiTest {
         @DisplayName("PUT /api/v1/posts/{id} - 작성자가 아니면 수정 불가")
         void updatePost_notOwner_fails() throws Exception {
                 Post post = postRepository.save(
-                                Post.createPost(1L, "원래 제목", "설명", BigDecimal.valueOf(1000)));
+                                Post.builder().userId(1L).title("원래 제목").content("설명").currentPrice(BigDecimal.valueOf(1000)).build());
 
                 PostCreateRequest request = PostCreateRequest.builder()
                                 .title("해킹된 제목")
@@ -249,7 +249,7 @@ class PostApiTest {
         @DisplayName("DELETE /api/v1/posts/{id} - 정상 삭제 후 조회 안 됨")
         void deletePost_success() throws Exception {
                 Post post = postRepository.save(
-                                Post.createPost(1L, "삭제할 상품", "설명", BigDecimal.valueOf(1000)));
+                                Post.builder().userId(1L).title("삭제할 상품").content("설명").currentPrice(BigDecimal.valueOf(1000)).build());
 
                 mockMvc.perform(delete("/api/v1/posts/{id}", post.getId())
                                 .with(user(mockUser)))
@@ -262,7 +262,7 @@ class PostApiTest {
         @DisplayName("DELETE /api/v1/posts/{id} - 작성자가 아니면 삭제 불가")
         void deletePost_notOwner_fails() throws Exception {
                 Post post = postRepository.save(
-                                Post.createPost(1L, "삭제할 상품", "설명", BigDecimal.valueOf(1000)));
+                                Post.builder().userId(1L).title("삭제할 상품").content("설명").currentPrice(BigDecimal.valueOf(1000)).build());
 
                 mockMvc.perform(delete("/api/v1/posts/{id}", post.getId())
                                 .with(user(otherUser)))

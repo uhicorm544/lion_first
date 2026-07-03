@@ -1,6 +1,6 @@
 package com.paprika.domain.post.entity;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,7 +40,7 @@ public class PostImage {
     @Column(nullable = false)
     private boolean active = true;
     @Column
-    private OffsetDateTime deleteScheduledAt;
+    private Instant deleteScheduledAt;
 
     /* --- 2. Builder --- */
     @Builder
@@ -56,7 +56,8 @@ public class PostImage {
      * @param scheduledAt
      */
     public void softDeleteSchedule() {
+        final int SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60; // 7일을 초 단위로 계산
         this.active = false;
-        this.deleteScheduledAt = OffsetDateTime.now().plusDays(7);
+        this.deleteScheduledAt = Instant.now().plusSeconds(SEVEN_DAYS_IN_SECONDS); // 7일 후
     }
 }
