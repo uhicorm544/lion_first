@@ -14,6 +14,7 @@ import ChatButton from "@/components/chat/ChatButton";
 import TradeButton from "@/components/transactions/TradeButton";
 import type { ApiResponse, PostApiResponse } from "@/types";
 import styles from "./page.module.css";
+import WishlistButton from "@/components/mypage/WishlistButton";
 
 export const metadata: Metadata = {
 	title: "Paprika - 상품 상세",
@@ -90,9 +91,7 @@ export default async function ProductDetailPage({
 				<div className={styles.actionsCard}>
 					<h2 className={styles.actionsTitle}>거래 옵션</h2>
 					<div className={styles.actionRow}>
-						<button className={styles.secondaryButton} type="button">
-							관심 등록
-						</button>
+						<WishlistButton productId={product.id} />
 						<ChatButton postId={product.id} />
 						{product.postStatus === "SELLING" && (
 							<TradeButton postId={product.id} />
