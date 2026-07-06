@@ -33,19 +33,16 @@ const CATEGORIES = [
 function ProductsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [category, setCategory] = useState(() => searchParams.get('category') ?? '');
+  const category = searchParams.get('category') ?? '';
   const [page, setPage] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [meta, setMeta] = useState<PageMeta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // URL의 category 파라미터가 바뀌면 반영 (홈에서 넘어올 때)
   useEffect(() => {
-    const urlCategory = searchParams.get('category') ?? '';
-    setCategory(urlCategory);
     setPage(0);
-  }, [searchParams]);
+  }, [category]);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,7 +89,6 @@ function ProductsPageInner() {
   }, [category, page]);
 
   function handleCategory(value: string) {
-    setPage(0);
     if (value) {
       router.push(`/products?category=${value}`);
     } else {

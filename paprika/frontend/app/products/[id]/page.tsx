@@ -4,18 +4,19 @@
  * 담당: B - 백성민 (상품 정보), D - 이동준 (거래 버튼), C - 한대천 (채팅하기 버튼)
  *
  * TODO:
- *  - 이미지 갤러리 (PostImage 연동 후)
+ *  - [x] 이미지 갤러리 (PostImage 연동 후) - 성민 07/03
  *  - 판매자 정보 및 매너 온도 표시 (E - 장인호)
  *  - '거래하기' 버튼 → 직거래/택배 선택 (D - 이동준)
  *  - '관심' 버튼 → 찜 추가/제거 (E - 장인호)
  */
 import type { Metadata } from "next";
 import ChatButton from "@/components/chat/ChatButton";
+import WishlistButton from "@/components/mypage/WishlistButton";
+import PostOwnerActions from "@/components/post/PostOwnerActions";
 import ImageGallery from "@/components/product/ImageGallery";
 import TradeButton from "@/components/transactions/TradeButton";
 import type { ApiResponse, PostApiResponse } from "@/types";
 import styles from "./page.module.css";
-import WishlistButton from "@/components/mypage/WishlistButton";
 
 export const metadata: Metadata = {
 	title: "Paprika - 상품 상세",
@@ -48,9 +49,15 @@ export default async function ProductDetailPage({
 						</p>
 						<h1 className={styles.title}>{product.title}</h1>
 					</div>
-					<p className={styles.price}>
-						${product.currentPrice.toLocaleString()}
-					</p>
+					<div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+						<p className={styles.price}>
+							₩{product.currentPrice.toLocaleString()}
+						</p>
+						<PostOwnerActions
+							postId={product.id}
+							postAuthorId={product.userId}
+						/>
+					</div>
 				</div>
 
 				<div className={styles.stats}>
@@ -77,6 +84,7 @@ export default async function ProductDetailPage({
 								<p className={styles.sellerSub}>Trusted seller</p>
 							</div>
 						</div>
+						{/* TODO[to.인호 from 성민]: 하드 코딩값 check -> 이거 로직 있나요? */}
 						<span className={styles.sellerTag}>Manner Temperature 36.5°C</span>
 					</div>
 				</div>
