@@ -5,12 +5,13 @@
  *
  * TODO:
  *  - [x] 이미지 갤러리 (PostImage 연동 후) - 성민 07/03
- *  - 판매자 정보 및 매너 온도 표시 (E - 장인호)
+ *  - [x] 판매자 정보 및 매너 온도 표시 (E - 장인호) - 인호 07/06
  *  - '거래하기' 버튼 → 직거래/택배 선택 (D - 이동준)
- *  - '관심' 버튼 → 찜 추가/제거 (E - 장인호)
+ *  - [x] '관심' 버튼 → 찜 추가/제거 (E - 장인호)
  */
 import type { Metadata } from "next";
 import ChatButton from "@/components/chat/ChatButton";
+import SellerInfoCard from "@/components/mypage/SellerInfoCard";
 import WishlistButton from "@/components/mypage/WishlistButton";
 import PostOwnerActions from "@/components/post/PostOwnerActions";
 import ImageGallery from "@/components/product/ImageGallery";
@@ -72,20 +73,10 @@ export default async function ProductDetailPage({
 				<div className={styles.sellerCard}>
 					<h2 className={styles.sellerTitle}>판매자 정보</h2>
 					<div className={styles.sellerInfo}>
-						<div className={styles.sellerMeta}>
-							<div className={styles.avatar}>
-								{/* TODO: 판매자 정보 연동 (E - 장인호) */}
-								<img src="/images/avatar-placeholder.svg" alt="seller" />
-							</div>
-							<div>
-								<p className={styles.sellerName}>
-									{product.nickname} 님 #{product.userId}
-								</p>
-								<p className={styles.sellerSub}>Trusted seller</p>
-							</div>
-						</div>
-						{/* TODO[to.인호 from 성민]: 하드 코딩값 check -> 이거 로직 있나요? */}
-						<span className={styles.sellerTag}>Manner Temperature 36.5°C</span>
+						<SellerInfoCard
+							userId={product.userId}
+							metaClassName={styles.sellerMeta}
+						/>
 					</div>
 				</div>
 
