@@ -27,8 +27,9 @@ public record PostResponse(
         PostStatus postStatus,
         PostCategory category,
         int viewCount,
+        int wishCount,
         Instant createdAt) {
-    public static PostResponse from(Post post) {
+    public static PostResponse from(Post post, int wishCount) {
         return PostResponse.builder()
                 .id(post.getId())
                 .userId(post.getUserId())
@@ -42,6 +43,7 @@ public record PostResponse(
                 .postStatus(post.getPostStatus())
                 .category(post.getCategory())
                 .viewCount(post.getViewCount())
+                .wishCount(wishCount)
                 .createdAt(post.getCreatedAt())
                 .build();
     }

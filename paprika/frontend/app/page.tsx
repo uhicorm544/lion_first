@@ -39,7 +39,7 @@ export default function HomePage() {
           location: '',
           imageUrls: p.thumbnailUrl ? [p.thumbnailUrl] : ['/images/product-placeholder.svg'],
           viewCount: p.viewCount ?? 0,
-          wishCount: 0,
+          wishCount: p.wishCount ?? 0,
           createdAt: p.createdAt ?? '',
         }));
         setProducts(mapped);

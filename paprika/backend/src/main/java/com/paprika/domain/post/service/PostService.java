@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.paprika.domain.auth.entity.User;
 import com.paprika.domain.auth.repository.UserRepository;
+import com.paprika.domain.mypage.repository.WishListRepository;
 import com.paprika.domain.post.dto.PostCreateRequest;
 import com.paprika.domain.post.dto.PostDetailResponse;
 import com.paprika.domain.post.dto.PostResponse;
@@ -45,6 +46,7 @@ public class PostService implements IPostStatusUpdater {
     private final PostImageRepository postImageRepository;
     private final PostPriceHistoryRepository postPriceHistoryRepository;
     private final UserRepository userRepository;
+    private final WishListRepository wishListRepository;
 
     // 단건 조회
     // (As-is - 07/02) 현재 쿼리 두 번 나가는 구조임
@@ -63,7 +65,7 @@ public class PostService implements IPostStatusUpdater {
         Page<Post> posts = (category != null)
                 ? postRepository.findByCategoryAndActiveTrue(category, pageable)
                 : postRepository.findByActiveTrue(pageable);
-        return posts.map(PostResponse::from);
+        return posts.map(post -> PostResponse.from(post, (int) wishListRepository.countByProductId(post.getId())));
     }
 
     // 여기가 중요하구나
@@ -155,7 +157,7 @@ public class PostService implements IPostStatusUpdater {
     // TODO : search 임시
     public Page<PostResponse> searchPosts(String keyword, Pageable pageable) {
         Page<Post> posts = postRepository.searchPostsByKeyword(keyword, pageable);
-        return posts.map(PostResponse::from);
+        return posts.map(post -> PostResponse.from(post, (int) wishListRepository.countByProductId(post.getId())));
     }
 
     @Override
